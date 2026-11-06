@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "0.4.0",
+    "version": "0.4.2",
     "studioName": "City Fit (fiktiv)",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
@@ -11,8 +11,8 @@
     "restMinutes": 3,
     "defaultSets": 3,
     "maxSets": 6,
-    "reservationMinutes": 1,
-    "bridgeReservationMinutes": 2,
+    "reservationMinutes": 2,
+    "directReservationMinutes": 1,
     "simTakesReservationSeconds": 20,
     "idleMinutes": 20,
     "nextQueueAfterPercentSets": 50,

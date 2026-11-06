@@ -7,10 +7,10 @@
 //   getState()            -> { devices, queues, sim }
 //   subscribe(listener)   -> Abmeldefunktion; listener(state) bei jeder Änderung
 //   reset()               -> Ausgangszustand aus der JSON-Datei wiederherstellen
-//   join(type) / leave(type) / start / completeSet / finish / confirmPresence / simulateStep -> { ok, code?, text? }
+//   join(type) / leave(type) / reserve(type) / start / completeSet / finish / confirmPresence / simulateStep -> { ok, code?, text? }
 //   tick()                -> Lauf der Zeit (Bots, Ablauf von Reservierungen); auf dem Server macht das der Server
 // Die Regeln selbst stehen in queue-logic.js (ohne Browser-Abhängigkeit, auch auf einem Server nutzbar).
-import * as logic from "./queue-logic.js?v=0.4.1";
+import * as logic from "./queue-logic.js?v=0.4.2";
 
 const STATE_KEY = "geraeteblick.state.v4";
 const CHANNEL = "geraeteblick";
@@ -59,6 +59,7 @@ export function createLocalStore(data) {
     reset() { write(initialState()); },
     join: (type, me, opts) => act((st) => logic.join(st, type, me, rules, opts)),
     leave: (type, meId) => act((st) => logic.leave(st, type, meId)),
+    reserve: (type, me, opts) => act((st) => logic.reserve(st, type, me, rules, now(), opts)),
     start: (deviceId, me, opts) => act((st) => logic.start(st, deviceId, me, rules, now(), opts)),
     completeSet: (deviceId, meId) => act((st) => logic.completeSet(st, deviceId, meId, rules, now())),
     finish: (deviceId, meId) => act((st) => logic.finish(st, deviceId, meId, rules, now())),

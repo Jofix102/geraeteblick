@@ -109,21 +109,19 @@ function removeFromQueues(state, meId) {
 
 function occupy(d, person, sets, now) {
   Object.assign(d, { status: "occupied", occupiedBy: { id: person.id, name: person.name }, reservedFor: null, reservedUntil: null,
-    plannedSets: sets, completedSets: 0, startedAt: now, lastSetAt: null, confirmedAt: null });
+    reservedAt: null, plannedSets: sets, completedSets: 0, startedAt: now, lastSetAt: null, confirmedAt: null });
 }
 
 /**
  * Gerät weitergeben: Nr. 1 der Schlange dieses Gerätetyps bekommt eine Reservierung, sonst frei.
- * Wer gerade noch an einem anderen Gerät überbrückt, bekommt mehr Zeit (2 statt 1 Minute).
+ * Aus der Warteschlange gibt es immer 2 Minuten Zeit zum Beziehen (Finn, 06.11.2026).
  */
 function handOver(state, deviceId, rules, now) {
   const d = state.devices[deviceId];
   Object.assign(d, { occupiedBy: null, plannedSets: 0, completedSets: 0, startedAt: null, lastSetAt: null, confirmedAt: null });
   const next = queueOf(state, d.type).shift();
-  if (!next) { Object.assign(d, { status: "free", reservedFor: null, reservedUntil: null }); return; }
-  const bridging = !!whereIs(state, next.id).training;
-  Object.assign(d, { status: "reserved", reservedFor: next,
-    reservedUntil: now + (bridging ? rules.bridgeReservationMinutes : rules.reservationMinutes) * MIN });
+  if (!next) { Object.assign(d, { status: "free", reservedFor: null, reservedAt: null, reservedUntil: null }); return; }
+  Object.assign(d, { status: "reserved", reservedFor: next, reservedAt: now, reservedUntil: now + rules.reservationMinutes * MIN });
 }
 
 const fail = (code, text) => ({ ok: false, code, text });
@@ -162,7 +160,25 @@ export function leave(state, type, meId) {
 }
 
 /**
- * Training starten. Erlaubt, wenn das Gerät frei ist und niemand wartet, oder wenn es für mich reserviert ist.
+ * Freies Gerät aus der Übersicht wählen: Es wird 1 Minute für mich reserviert, damit ich hingehen kann.
+ * Dort bestätige ich die Ankunft (start). keepQueue: Platz in einer anderen Schlange behalten (überbrücken).
+ */
+export function reserve(state, type, me, rules, now, { keepQueue = false, sets } = {}) {
+  const id = freeDeviceOfType(state, type);
+  if (!id) return fail("busy", "Gerade ist kein Gerät dieses Typs frei.");
+  const n = checkSets(sets, rules);
+  if (!n) return fail("sets", `Bitte 1 bis ${rules.maxSets} Sätze wählen.`);
+  const w = whereIs(state, me.id);
+  if (w.training) return fail("training", "Du trainierst gerade an einem anderen Gerät.");
+  if (w.reserved) handOver(state, w.reserved, rules, now);
+  if (w.queued && !keepQueue) removeFromQueues(state, me.id);
+  Object.assign(state.devices[id], { status: "reserved", reservedFor: { id: me.id, name: me.name, sets: n, direct: true, keepQueue },
+    reservedAt: now, reservedUntil: now + rules.directReservationMinutes * MIN });
+  return { ok: true, device: id };
+}
+
+/**
+ * Training starten (= am Gerät angekommen). Erlaubt, wenn das Gerät frei ist und niemand wartet, oder wenn es für mich reserviert ist.
  * keepQueue: Platz in einer anderen Schlange behalten (Zeit überbrücken an einem völlig freien Gerät).
  */
 export function start(state, deviceId, me, rules, now, { keepQueue = false, sets } = {}) {
@@ -178,7 +194,7 @@ export function start(state, deviceId, me, rules, now, { keepQueue = false, sets
     if (!mine) return fail("training", "Du trainierst gerade an einem anderen Gerät.");
     handOver(state, w.training, rules, now);
   }
-  if (w.queued && !keepQueue) removeFromQueues(state, me.id);
+  if (w.queued && !keepQueue && !(mine && d.reservedFor.keepQueue)) removeFromQueues(state, me.id);
   if (w.reserved && w.reserved !== deviceId) handOver(state, w.reserved, rules, now);
   occupy(d, me, n, now);
   return OK;
@@ -255,7 +271,7 @@ export function tick(state, rules, now) {
     }
     if (presence(d, rules, now)?.state === "remove") { handOver(state, id, rules, now); changed = true; }
     if (d.status === "reserved") {
-      const waited = rules.reservationMinutes * MIN - (d.reservedUntil - now);
+      const waited = now - (d.reservedAt || now);
       if (isSim(d.reservedFor) && waited >= rules.simTakesReservationSeconds * 1000) { occupy(d, d.reservedFor, d.reservedFor.sets || rules.defaultSets, now); changed = true; }
       else if (now >= d.reservedUntil) { handOver(state, id, rules, now); changed = true; }
     }

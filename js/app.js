@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.1";
-import { createLocalStore } from "./store-local.js?v=0.4.1";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.2";
+import { createLocalStore } from "./store-local.js?v=0.4.2";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.4.1";
+} from "./queue-logic.js?v=0.4.2";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -38,7 +38,7 @@ const approx = (ms) => ms < 60_000 ? "unter 1 Min." : `ca. ${Math.ceil(ms / 60_0
 const clock = (kind, ref, extra = "") => `<span data-clock="${kind}" data-ref="${esc(ref)}"${extra}></span>`;
 const link = (id) => `<a data-nav href="?geraet=${encodeURIComponent(id)}">${esc(label(devById(id)))}</a>`;
 // Aktionen, vor denen gefragt wird, wie viele Sätze man macht.
-const NEEDS_SETS = new Set(["join", "join-switch", "start", "start-keep", "start-type"]);
+const NEEDS_SETS = new Set(["join", "join-switch", "start", "start-keep", "reserve", "reserve-keep"]);
 const btn = (action, ref, text, primary = false, go = "", needSets = NEEDS_SETS.has(action)) =>
   `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-ref="${esc(ref)}"${go ? ` data-go="${esc(go)}"` : ""}${needSets ? " data-needsets" : ""}>${text}</button>`;
 
@@ -63,14 +63,14 @@ function renderBar() {
   if (!store) { bar.hidden = true; return; }
   const st = store.getState(), w = whereIs(st, me.id);
   if (lastReserved && !w.reserved && w.training !== lastReserved && !ownAction)
-    alertText = `Deine Reservierung ${an(lastReserved)} ${label(devById(lastReserved))} ist abgelaufen. Der Nächste ist dran.`;
+    alertText = `Deine Reservierung ${an(lastReserved)} ${label(devById(lastReserved))} ist abgelaufen, weil du die Ankunft nicht bestätigt hast.`;
   if (lastTraining && !w.training && !ownAction)
     alertText = `Du wurdest ${an(lastTraining)} ${label(devById(lastTraining))} abgemeldet, weil ${data.rules.removeWithoutAnswerMinute} Minuten keine Rückmeldung kam.`;
   lastReserved = w.reserved; lastTraining = w.training; ownAction = false;
 
   const parts = [];
   if (alertText) parts.push(`<p class="bar-line">${esc(alertText)} <button type="button" class="linklike" data-dismiss>OK</button></p>`);
-  if (w.reserved) parts.push(`<p class="bar-line turn"><b>Du bist dran ${an(w.reserved)} ${esc(label(devById(w.reserved)))}!</b> ${clock("res", w.reserved)} <button type="button" class="button primary" data-showturn>Karte zeigen</button></p>`);
+  if (w.reserved) parts.push(`<p class="bar-line turn"><b>${st.devices[w.reserved].reservedFor.direct ? "Für dich reserviert:" : `Du bist dran ${an(w.reserved)}`} ${esc(label(devById(w.reserved)))}!</b> ${clock("res", w.reserved)} <button type="button" class="button primary" data-showturn>Karte zeigen</button></p>`);
   if (w.training && presence(st.devices[w.training], data.rules, Date.now())?.state === "ask")
     parts.push(`<p class="bar-line turn"><b>Bist du noch da?</b> Sonst wirst du in ${clock("pres", w.training)} abgemeldet. ${btn("here", w.training, "Ja, bin noch da", true)}</p>`);
   if (w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?ansicht=ich">Öffnen</a></p>`);
@@ -88,18 +88,20 @@ function renderTurn(st, w) {
     turnShownFor = null;
     return;
   }
-  const d = devById(w.reserved), s = st.devices[w.reserved];
+  const d = devById(w.reserved), s = st.devices[w.reserved], direct = !!s.reservedFor.direct;
+  const n = s.reservedFor.sets;
+  const arrive = w.training ? `${an(w.training) === "am" ? "Am" : "An der"} ${esc(label(devById(w.training)))} beenden, ich bin da` : "Ich bin da, Training starten";
   dlg.innerHTML = `
-    <h2>Du bist dran: ${esc(label(d))}</h2>
-    <p>📍 ${esc(d.location)}. Noch <b>${clock("res", d.id)}</b> Zeit, um es zu beziehen.</p>
+    <h2>${direct ? `Geh ${feminine(d.name) ? "zur" : "zum"}` : "Du bist dran:"} ${esc(label(d))}</h2>
+    <p>📍 ${esc(d.location)}. Das Gerät ist für dich reserviert. Bestätige innerhalb von <b>${clock("res", d.id)}</b>, sobald du angekommen bist.</p>
     ${mapSvg(d.id)}
-    <p class="meta">Du hast ${s.reservedFor.sets} ${s.reservedFor.sets === 1 ? "Satz" : "Sätze"} angegeben.</p>
-    <div class="actions">${btn("start", d.id, w.training ? `${an(w.training) === "am" ? "Am" : "An der"} ${esc(label(devById(w.training)))} beenden und hier starten` : "Gerät beziehen, Training starten", true, "?ansicht=ich", false)}
-    ${btn("finish", d.id, "Platz freigeben")}</div>`;
+    <p class="meta">${n} ${n === 1 ? "Satz" : "Sätze"}</p>
+    <div class="actions">${btn("start", d.id, arrive, true, "?ansicht=ich", false)}
+    ${btn("finish", d.id, direct ? "Abbrechen" : "Platz freigeben")}</div>`;
   if (turnShownFor !== w.reserved) {
     turnShownFor = w.reserved;
     if (!dlg.open && typeof dlg.showModal === "function") dlg.showModal();
-    signal();
+    if (!direct) signal(); // Ton nur, wenn man aus der Warteschlange drankommt
   }
 }
 
@@ -135,7 +137,8 @@ const ACTIONS = {
   // Reserviert: die Sätze von der Anmeldung zur Warteschlange gelten weiter.
   start: (id) => store.start(id, me, store.getState().devices[id].reservedFor?.id === me.id ? {} : { sets: sets() }),
   "start-keep": (id) => store.start(id, me, { keepQueue: true, sets: sets() }),
-  "start-type": (type) => { const id = freeDeviceOfType(store.getState(), type); return id ? store.start(id, me, { sets: sets() }) : { ok: false, text: "Gerade ist kein Gerät frei." }; },
+  reserve: (type) => store.reserve(type, me, { sets: sets() }),
+  "reserve-keep": (type) => store.reserve(type, me, { keepQueue: true, sets: sets() }),
   set: (id) => store.completeSet(id, me.id),
   here: (id) => store.confirmPresence(id, me.id),
   finish: (id) => store.finish(id, me.id),
@@ -143,7 +146,8 @@ const ACTIONS = {
 };
 const DONE = {
   join: "Du stehst jetzt in der Warteschlange.", "join-switch": "Gewechselt: Du stehst jetzt hier an.",
-  leave: "Du hast die Warteschlange verlassen.", start: "Training gestartet.", "start-type": "Training gestartet.",
+  leave: "Du hast die Warteschlange verlassen.", start: "Training gestartet.",
+  reserve: "Gerät reserviert. Geh hin und bestätige deine Ankunft.", "reserve-keep": "Gerät reserviert, dein Platz in der Warteschlange bleibt.",
   "start-keep": "Training gestartet. Dein Platz in der Warteschlange bleibt.", finish: "Gerät freigegeben.",
   sim: "Simulation: Sim-Gast ist weiter.", set: "Satz abgehakt. Jetzt Pause.", here: "Danke, du bleibst angemeldet."
 };
@@ -155,7 +159,6 @@ document.addEventListener("click", (e) => {
   ownAction = true;
   const result = ACTIONS[b.dataset.action](b.dataset.ref);
   flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? "Letzter Satz geschafft. Das Gerät ist frei für den Nächsten." : DONE[b.dataset.action] };
-  if (result.ok && b.dataset.action === "start-type") return navigate(`?geraet=${whereIs(store.getState(), me.id).training}`);
   if (result.ok && b.dataset.go) return navigate(b.dataset.go);
   render();
 });
@@ -208,12 +211,12 @@ function flashHtml() {
 function askSets(b) {
   const dlg = $("#sets"), r = data.rules, ref = b.dataset.ref;
   const type = data.devices.some((d) => d.type === ref) ? ref : devById(ref).type;
-  const verb = b.dataset.action.startsWith("join") ? "Anstellen" : "Starten";
+  const verb = b.dataset.action.startsWith("join") ? "Anstellen" : b.dataset.action.startsWith("reserve") ? "Reservieren" : "Starten";
   const nums = Array.from({ length: r.maxSets }, (_, i) => i + 1).map((n) =>
     `<button type="button" class="setbtn${n === sets() ? " suggested" : ""}" data-action="${b.dataset.action}" data-ref="${esc(ref)}" data-sets="${n}"${b.dataset.go ? ` data-go="${esc(b.dataset.go)}"` : ""}>
       <span class="num">${n}</span><span>${n === 1 ? "Satz" : "Sätze"}</span></button>`).join("");
   dlg.innerHTML = `<h2>Wie viele Sätze ${anType(type)} ${esc(typeName(type))}?</h2>
-    <p class="meta">Tippe die Zahl an. Damit wird ${verb === "Anstellen" ? "angestellt" : "gestartet"}.</p>
+    <p class="meta">Tippe die Zahl an. Damit wird ${{ Anstellen: "angestellt", Reservieren: "das Gerät für dich reserviert", Starten: "gestartet" }[verb]}.</p>
     <div class="setgrid">${nums}</div>
     <button type="button" class="button" data-closesets>Abbrechen</button>`;
   dlg.showModal();
@@ -228,8 +231,8 @@ function typeAction(st, w, type) {
   const free = freeDeviceOfType(st, type);
   if (free) {
     if (w.training) return "";
-    if (w.queued) return btn("start-keep", free, "Hier überbrücken", false, `?geraet=${free}`);
-    return btn("start-type", type, "Freies Gerät nehmen");
+    if (w.queued) return btn("reserve-keep", type, "Hier überbrücken");
+    return btn("reserve", type, "Freies Gerät nehmen");
   }
   if (w.training && !trainingFarEnough(st.devices[w.training], r)) return "";
   return btn(w.queued ? "join-switch" : "join", type, w.queued ? "Wechseln: hier anstellen" : "Anstellen");
@@ -297,8 +300,8 @@ function deviceActionsHtml(st, w, d) {
       ${btn("finish", d.id, "Training abbrechen, Gerät freigeben")}
       <p class="meta">Hake jeden Satz direkt ab. So sehen die Wartenden, wie weit du bist.</p>`;
   if (s.reservedFor?.id === me.id)
-    return `<p><b>Du bist dran.</b> Noch ${clock("res", d.id)} Zeit zum Starten.</p>
-      ${btn("start", d.id, "Gerät beziehen, Training starten", true, "", false)} ${btn("finish", d.id, "Platz freigeben")}`;
+    return `<p><b>Für dich reserviert.</b> Noch ${clock("res", d.id)} Zeit, deine Ankunft zu bestätigen.</p>
+      ${btn("start", d.id, "Ich bin da, Training starten", true, "", false)} ${btn("finish", d.id, "Platz freigeben")}`;
   if (isCompletelyFree(st, d.id)) {
     if (w.training) return `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Beende dort zuerst dein Training.</p>`;
     if (w.queued) return `<p>Das Gerät ist frei. Du stehst ${anType(w.queued.type)} ${esc(typeName(w.queued.type))} an (Nr. ${w.queued.position}, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}).</p>
