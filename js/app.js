@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.5.0";
-import { createLocalStore } from "./store-local.js?v=0.5.0";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.5.1";
+import { createLocalStore } from "./store-local.js?v=0.5.1";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.5.0";
+} from "./queue-logic.js?v=0.5.1";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -314,13 +314,14 @@ function deviceActionsHtml(st, w, d) {
   const s = st.devices[d.id], r = data.rules;
   if (s.occupiedBy?.id === me.id)
     return `<div class="trainer">
-      <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Uhr für den aktuellen Satz">
+      <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="${s.completedSets} von ${s.plannedSets} Sätzen erledigt">
         <circle class="track" cx="60" cy="60" r="50"/>
-        <circle class="arc" cx="60" cy="60" r="50" data-clock="ring" data-ref="${esc(d.id)}" stroke-dasharray="314.16" stroke-dashoffset="0"/>
-        <text x="60" y="62" text-anchor="middle" data-clock="ringtime" data-ref="${esc(d.id)}">–:––</text>
-        <text x="60" y="78" text-anchor="middle" class="ring-sub" data-clock="ringlabel" data-ref="${esc(d.id)}"></text>
+        <circle class="arc" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="${314.16 * (1 - s.completedSets / s.plannedSets)}"/>
+        <text x="60" y="64" text-anchor="middle">${s.completedSets}/${s.plannedSets}</text>
+        <text x="60" y="80" text-anchor="middle" class="ring-sub">Sätze erledigt</text>
       </svg>
-      <div class="dots" aria-label="${s.completedSets} von ${s.plannedSets} Sätzen">${Array.from({ length: s.plannedSets }, (_, i) => `<span class="dot${i < s.completedSets ? " done" : ""}"></span>`).join("")}</div>
+      <p class="meta trainer-info">${s.completedSets ? "Seit dem letzten Satz" : "Seit dem Start"} ${clock("since", d.id)} · Wartende rechnen mit frei in ${clock("free", d.id)}</p>
+      <p class="meta">Mach Sätze und Pausen in deinem Tempo. Hake jeden Satz direkt nach dem Satz ab.</p>
       ${btn("set", d.id, `${icon("check")} Satz ${s.completedSets + 1} von ${s.plannedSets} geschafft`, true).replace('class="button primary"', 'class="button primary check"')}
       <button type="button" class="linklike" data-action="finish" data-ref="${esc(d.id)}">Training abbrechen, Gerät freigeben</button>
     </div>`;
@@ -536,24 +537,14 @@ function updateClocksOnly() {
     if (!d) return;
     if (kind === "free") el.textContent = approx(msUntilFree(d, r, now));
     else if (kind === "res") el.textContent = mmss(reservationMsLeft(d, now));
-    else if (kind === "ring" || kind === "ringtime" || kind === "ringlabel") {
-      const ph = phase(d, r, now);
-      if (!ph) return;
-      const total = (ph.kind === "rest" ? r.restMinutes : r.setMinutes) * 60_000;
-      if (kind === "ring") {
-        el.setAttribute("stroke-dashoffset", String(314.16 * (1 - Math.max(0, ph.msLeftInPhase) / total)));
-        el.classList.toggle("rest", ph.kind === "rest");
-      } else if (kind === "ringtime") el.textContent = ph.kind === "over" ? "0:00" : mmss(ph.msLeftInPhase);
-      else el.textContent = ph.kind === "rest" ? `Pause bis Satz ${ph.set}` : ph.kind === "set" ? `Satz ${ph.set} von ${d.plannedSets}` : "Satz fertig? Abhaken!";
-    }
+    // Seit dem Start bzw. dem letzten abgehakten Satz (Stoppuhr, keine Vorgabe).
+    else if (kind === "since") el.textContent = d.status === "occupied" ? mmss(now - (d.lastSetAt || d.startedAt)) : "";
     else if (kind === "pres") el.textContent = mmss(presence(d, r, now)?.msLeft ?? 0);
+    // Fortschritt zählt nur abgehakte Sätze. Die Minuten (1 Satz + 3 Pause) dienen nur der Wartezeit-Schätzung.
     else if (kind === "phase" || kind === "bar") {
-      const ph = phase(d, r, now);
-      if (!ph) { el.textContent = ""; return; }
-      if (kind === "bar") { el.style.width = `${Math.min(100, 100 - (ph.msLeft / trainingMs(d.plannedSets, r)) * 100)}%`; return; }
-      el.textContent = ph.kind === "rest" ? `Pause, Satz ${ph.set} in ${mmss(ph.msLeftInPhase)}`
-        : ph.kind === "set" ? `Satz ${ph.set} von ${d.plannedSets} läuft, noch ${mmss(ph.msLeftInPhase)}`
-        : `Satz ${ph.set} von ${d.plannedSets} dauert länger als geplant`;
+      if (d.status !== "occupied" || !d.plannedSets) { el.textContent = ""; return; }
+      if (kind === "bar") { el.style.width = `${(d.completedSets / d.plannedSets) * 100}%`; return; }
+      el.textContent = `${d.completedSets} von ${d.plannedSets} Sätzen erledigt`;
     }
   });
 }

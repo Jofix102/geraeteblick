@@ -208,3 +208,4 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .foot a,.foot .linklike{color:var(--soft)}
 .card .type-head h2{margin:0}
 .card .type-head img{width:56px;height:56px}
+.trainer-info{text-align:center}.trainer .meta{text-align:center;max-width:360px}
