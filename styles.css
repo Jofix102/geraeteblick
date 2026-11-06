@@ -95,3 +95,8 @@ footer{color:var(--soft);font-size:.85rem}
 @media(prefers-reduced-motion:reduce){.map .spot.hi .pulse{animation:none}}
 .mapbox{margin:12px 0}
 .mapbox summary{cursor:pointer;color:var(--teal);min-height:44px;display:flex;align-items:center}
+.setgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 16px}
+.setbtn{font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.setbtn .num{font-size:1.8rem;font-weight:700;color:var(--teal);line-height:1}
+.setbtn.suggested{border-color:var(--teal);background:var(--teal-soft)}
+.setbtn:focus-visible{outline:3px solid #c8793f;outline-offset:2px}

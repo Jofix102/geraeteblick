@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.0";
-import { createLocalStore } from "./store-local.js?v=0.4.0";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.1";
+import { createLocalStore } from "./store-local.js?v=0.4.1";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.4.0";
+} from "./queue-logic.js?v=0.4.1";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -37,8 +37,10 @@ const approx = (ms) => ms < 60_000 ? "unter 1 Min." : `ca. ${Math.ceil(ms / 60_0
 // Platzhalter für Zeiten, die jede Sekunde aktualisiert werden (siehe updateClocksOnly).
 const clock = (kind, ref, extra = "") => `<span data-clock="${kind}" data-ref="${esc(ref)}"${extra}></span>`;
 const link = (id) => `<a data-nav href="?geraet=${encodeURIComponent(id)}">${esc(label(devById(id)))}</a>`;
-const btn = (action, ref, text, primary = false, go = "") =>
-  `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-ref="${esc(ref)}"${go ? ` data-go="${esc(go)}"` : ""}>${text}</button>`;
+// Aktionen, vor denen gefragt wird, wie viele Sätze man macht.
+const NEEDS_SETS = new Set(["join", "join-switch", "start", "start-keep", "start-type"]);
+const btn = (action, ref, text, primary = false, go = "", needSets = NEEDS_SETS.has(action)) =>
+  `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-ref="${esc(ref)}"${go ? ` data-go="${esc(go)}"` : ""}${needSets ? " data-needsets" : ""}>${text}</button>`;
 
 function statusInfo(s) {
   if (s.status === "free") return { cls: "free", text: "Frei", icon: "✓" };
@@ -92,7 +94,7 @@ function renderTurn(st, w) {
     <p>📍 ${esc(d.location)}. Noch <b>${clock("res", d.id)}</b> Zeit, um es zu beziehen.</p>
     ${mapSvg(d.id)}
     <p class="meta">Du hast ${s.reservedFor.sets} ${s.reservedFor.sets === 1 ? "Satz" : "Sätze"} angegeben.</p>
-    <div class="actions">${btn("start", d.id, w.training ? `${an(w.training) === "am" ? "Am" : "An der"} ${esc(label(devById(w.training)))} beenden und hier starten` : "Gerät beziehen, Training starten", true, "?ansicht=ich")}
+    <div class="actions">${btn("start", d.id, w.training ? `${an(w.training) === "am" ? "Am" : "An der"} ${esc(label(devById(w.training)))} beenden und hier starten` : "Gerät beziehen, Training starten", true, "?ansicht=ich", false)}
     ${btn("finish", d.id, "Platz freigeben")}</div>`;
   if (turnShownFor !== w.reserved) {
     turnShownFor = w.reserved;
@@ -130,7 +132,8 @@ const ACTIONS = {
   join: (type) => store.join(type, me, { sets: sets() }),
   "join-switch": (type) => store.join(type, me, { switchQueue: true, sets: sets() }),
   leave: (type) => store.leave(type, me.id),
-  start: (id) => store.start(id, me, chosenSets ? { sets: chosenSets } : {}),
+  // Reserviert: die Sätze von der Anmeldung zur Warteschlange gelten weiter.
+  start: (id) => store.start(id, me, store.getState().devices[id].reservedFor?.id === me.id ? {} : { sets: sets() }),
   "start-keep": (id) => store.start(id, me, { keepQueue: true, sets: sets() }),
   "start-type": (type) => { const id = freeDeviceOfType(store.getState(), type); return id ? store.start(id, me, { sets: sets() }) : { ok: false, text: "Gerade ist kein Gerät frei." }; },
   set: (id) => store.completeSet(id, me.id),
@@ -147,6 +150,8 @@ const DONE = {
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-action]");
   if (!b || !store) return;
+  if (b.hasAttribute("data-needsets")) return askSets(b);
+  if (b.dataset.sets) { chosenSets = Number(b.dataset.sets); $("#sets").close(); }
   ownAction = true;
   const result = ACTIONS[b.dataset.action](b.dataset.ref);
   flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? "Letzter Satz geschafft. Das Gerät ist frei für den Nächsten." : DONE[b.dataset.action] };
@@ -157,6 +162,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("click", (e) => {
   if (e.target.matches("[data-dismiss]")) { alertText = ""; render(); }
   if (e.target.matches("[data-showturn]")) { turnShownFor = null; render(); }
+  if (e.target.matches("[data-closesets]")) $("#sets").close();
 });
 document.addEventListener("change", (e) => {
   if (e.target.matches("select[data-sets]")) chosenSets = Number(e.target.value);
@@ -198,11 +204,19 @@ function flashHtml() {
   return `<p class="flash ${f.ok ? "ok" : "bad"}" role="status">${esc(f.text)}</p>`;
 }
 
-function setsPicker() {
-  const r = data.rules, n = sets();
-  const opts = Array.from({ length: r.maxSets }, (_, i) => i + 1)
-    .map((i) => `<option value="${i}"${i === n ? " selected" : ""}>${i} ${i === 1 ? "Satz" : "Sätze"} (${trainingMs(i, r) / 60_000} Min.)</option>`).join("");
-  return `<label class="sets">Meine Sätze: <select data-sets>${opts}</select></label>`;
+// Satzauswahl: erscheint erst beim Anstellen oder Starten. Ein Tipp auf die Zahl führt die Aktion aus.
+function askSets(b) {
+  const dlg = $("#sets"), r = data.rules, ref = b.dataset.ref;
+  const type = data.devices.some((d) => d.type === ref) ? ref : devById(ref).type;
+  const verb = b.dataset.action.startsWith("join") ? "Anstellen" : "Starten";
+  const nums = Array.from({ length: r.maxSets }, (_, i) => i + 1).map((n) =>
+    `<button type="button" class="setbtn${n === sets() ? " suggested" : ""}" data-action="${b.dataset.action}" data-ref="${esc(ref)}" data-sets="${n}"${b.dataset.go ? ` data-go="${esc(b.dataset.go)}"` : ""}>
+      <span class="num">${n}</span><span>${n === 1 ? "Satz" : "Sätze"}</span></button>`).join("");
+  dlg.innerHTML = `<h2>Wie viele Sätze ${anType(type)} ${esc(typeName(type))}?</h2>
+    <p class="meta">Tippe die Zahl an. Damit wird ${verb === "Anstellen" ? "angestellt" : "gestartet"}.</p>
+    <div class="setgrid">${nums}</div>
+    <button type="button" class="button" data-closesets>Abbrechen</button>`;
+  dlg.showModal();
 }
 
 /** Was darf ich für diesen Gerätetyp tun? Liefert einen Knopf, einen Hinweis (<b>) oder nichts. */
@@ -284,12 +298,12 @@ function deviceActionsHtml(st, w, d) {
       <p class="meta">Hake jeden Satz direkt ab. So sehen die Wartenden, wie weit du bist.</p>`;
   if (s.reservedFor?.id === me.id)
     return `<p><b>Du bist dran.</b> Noch ${clock("res", d.id)} Zeit zum Starten.</p>
-      ${btn("start", d.id, "Gerät beziehen, Training starten", true)} ${btn("finish", d.id, "Platz freigeben")}`;
+      ${btn("start", d.id, "Gerät beziehen, Training starten", true, "", false)} ${btn("finish", d.id, "Platz freigeben")}`;
   if (isCompletelyFree(st, d.id)) {
     if (w.training) return `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Beende dort zuerst dein Training.</p>`;
     if (w.queued) return `<p>Das Gerät ist frei. Du stehst ${anType(w.queued.type)} ${esc(typeName(w.queued.type))} an (Nr. ${w.queued.position}, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}).</p>
-      ${setsPicker()}${btn("start-keep", d.id, "Hier überbrücken, Platz behalten", true)}${btn("start", d.id, "Wechseln: Platz aufgeben und hier trainieren")}`;
-    return `${setsPicker()}${btn("start", d.id, "Training starten", true)}`;
+      ${btn("start-keep", d.id, "Hier überbrücken, Platz behalten", true)}${btn("start", d.id, "Wechseln: Platz aufgeben und hier trainieren")}`;
+    return `${btn("start", d.id, "Training starten", true)}`;
   }
   const action = typeAction(st, w, d.type);
   if (action.startsWith("<b>")) return `<p>${action}</p>`;
@@ -298,7 +312,7 @@ function deviceActionsHtml(st, w, d) {
     : "";
   const many = devicesOf(d.type).length > 1;
   return `<p>Wartezeit: ${clock("join", d.type)}.${many ? ` Du bekommst das erste freie Gerät vom Typ ${esc(typeName(d.type))}.` : ""}</p>
-    ${setsPicker()}${action.replace('class="button"', 'class="button primary"')}`;
+    ${action.replace('class="button"', 'class="button primary"')}`;
 }
 
 function simHtml(d, s) {
@@ -316,7 +330,7 @@ function renderList() {
     <h2>Geräte in ${esc(data.meta.studioName)}</h2>
     <p class="meta">${data.devices.length} Geräte, ${free} frei. Du stellst dich je Gerätetyp an und bekommst das erste freie Gerät.</p>
     ${flashHtml()}
-    <div class="list-tools">${setsPicker()}</div>
+    
     ${groups.map((g) => `<h3 class="group">${esc(g)}</h3>
       <ul class="types">${types().filter((t) => devicesOf(t)[0].muscleGroup === g).map((t) => typeCard(st, w, t)).join("")}</ul>`).join("")}`;
   document.title = "Geräteblick – Übersicht";
@@ -380,7 +394,7 @@ function renderMine() {
   const now = Date.now();
   const list = types().filter((t) => !cur || st.devices[cur].type !== t)
     .map((t) => ({ t, wait: joinWaitMs(st, t, r, now) })).sort((a, b) => a.wait - b.wait);
-  html += `<div class="list-tools">${setsPicker()}</div><ul class="next">${list.map(({ t, wait }) => `<li class="next-row">
+  html += `<ul class="next">${list.map(({ t, wait }) => `<li class="next-row">
       <span><b>${esc(typeName(t))}</b><span class="meta"> · ${esc(devicesOf(t)[0].muscleGroup)} · ${wait === 0 ? "frei" : `dran in ${clock("join", t)}`}</span></span>${typeAction(st, w, t)}</li>`).join("")}</ul>`;
   $("#view").innerHTML = html;
   document.title = "Geräteblick – Mein Training";
