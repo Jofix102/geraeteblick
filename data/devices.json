@@ -1,14 +1,18 @@
 {
   "meta": {
-    "version": "0.3.2",
+    "version": "0.3.3",
     "studioName": "City Fit (fiktiv)",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
     "sourceNote": "Alle Angaben sind eigens erstellte, fiktive Beispieldaten (Geräteauswahl nach Vorgabe von Finn, 06.11.2026). Sie stammen nicht aus einem realen Studio und werden nicht live synchronisiert."
   },
   "rules": {
-    "minutesPerSet": 5,
+    "setMinutes": 1,
+    "restMinutes": 3,
+    "defaultSets": 3,
+    "maxSets": 6,
     "reservationMinutes": 1,
+    "simTakesReservationSeconds": 20,
     "idleMinutes": 20,
     "maxQueues": 1,
     "nextQueueAfterPercentSets": 50,
@@ -38,7 +42,10 @@
             "id": "sim-2",
             "name": "Sim-Gast 2"
           }
-        ]
+        ],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -55,7 +62,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -75,7 +85,10 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 2,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -95,7 +108,10 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -112,7 +128,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -137,7 +156,10 @@
             "id": "sim-6",
             "name": "Sim-Gast 6"
           }
-        ]
+        ],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -157,7 +179,10 @@
         "reservedFor": null,
         "plannedSets": 4,
         "completedSets": 1,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -174,7 +199,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -194,7 +222,10 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 2,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -211,7 +242,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -228,7 +262,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -248,7 +285,10 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 1,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -265,7 +305,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -282,7 +325,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -307,7 +353,10 @@
             "id": "sim-11",
             "name": "Sim-Gast 11"
           }
-        ]
+        ],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     },
     {
@@ -324,7 +373,10 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": []
+        "queue": [],
+        "startedAt": null,
+        "lastSetAt": null,
+        "reservedAt": null
       }
     }
   ]

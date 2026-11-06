@@ -53,3 +53,11 @@ footer{color:var(--soft);font-size:.85rem}
 .queue .me-entry{font-weight:700}
 .simctl{color:var(--warn);font-size:.9rem;border-top:1px dashed var(--line);padding-top:8px}
 .simctl .button{border-color:var(--warn);color:var(--warn);min-height:36px;padding:4px 10px}
+.progress{margin:8px 0}
+.dots{display:flex;gap:6px;margin-bottom:6px}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--teal);background:#fff}
+.dot.done{background:var(--teal)}
+.bar{height:8px;background:var(--teal-soft);border-radius:999px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--teal);width:0;transition:width 1s linear}
+.clockbig{font-size:1.3rem;font-weight:700;color:var(--teal)}
+.sets select{font:inherit;min-height:44px;margin-left:8px;border-radius:10px;border:1px solid var(--line);padding:4px 8px}

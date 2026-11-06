@@ -7,11 +7,12 @@
 //   getState()            -> { devices: { [id]: Gerätezustand } }
 //   subscribe(listener)   -> Abmeldefunktion; listener(state) bei jeder Änderung
 //   reset()               -> Ausgangszustand aus der JSON-Datei wiederherstellen
-//   join / leave / start / finish / simulateStep -> { ok, code?, text? }
+//   join / leave / start / completeSet / finish / simulateStep -> { ok, code?, text? }
+//   tick()                -> Lauf der Zeit (Sim-Gäste, Ablauf von Reservierungen); auf dem Server macht das der Server
 //   Die Regeln selbst stehen in queue-logic.js (ohne Browser-Abhängigkeit, auch auf einem Server nutzbar).
-import * as logic from "./queue-logic.js?v=0.3.2";
+import * as logic from "./queue-logic.js?v=0.3.3";
 
-const STATE_KEY = "geraeteblick.state.v3.2";
+const STATE_KEY = "geraeteblick.state.v3.3";
 const CHANNEL = "geraeteblick";
 
 export function createLocalStore(devices, rules) {
@@ -19,7 +20,9 @@ export function createLocalStore(devices, rules) {
   const channel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL) : null;
 
   function initialState() {
-    return { devices: Object.fromEntries(devices.map((d) => [d.id, structuredClone(d.initialState)])) };
+    const state = { devices: Object.fromEntries(devices.map((d) => [d.id, structuredClone(d.initialState)])) };
+    logic.seedTimes(state, rules, Date.now());
+    return state;
   }
 
   function read() {
@@ -58,8 +61,10 @@ export function createLocalStore(devices, rules) {
     reset() { write(initialState()); },
     join: (deviceId, me, opts) => act((st) => logic.join(st, deviceId, me, rules, opts)),
     leave: (deviceId, meId) => act((st) => logic.leave(st, deviceId, meId)),
-    start: (deviceId, me, opts) => act((st) => logic.start(st, deviceId, me, opts)),
-    finish: (deviceId, meId) => act((st) => logic.finish(st, deviceId, meId)),
-    simulateStep: (deviceId) => act((st) => logic.simulateStep(st, deviceId))
+    start: (deviceId, me, opts) => act((st) => logic.start(st, deviceId, me, rules, Date.now(), opts)),
+    completeSet: (deviceId, meId) => act((st) => logic.completeSet(st, deviceId, meId, Date.now())),
+    finish: (deviceId, meId) => act((st) => logic.finish(st, deviceId, meId, Date.now())),
+    tick: () => act((st) => ({ ok: logic.tick(st, rules, Date.now()) })),
+    simulateStep: (deviceId) => act((st) => logic.simulateStep(st, deviceId, rules, Date.now()))
   };
 }
