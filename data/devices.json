@@ -1,10 +1,11 @@
 {
   "meta": {
-    "version": "0.6.0",
+    "version": "0.6.1",
     "studioName": "Beispielstudio (fiktiv)",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
-    "sourceNote": "Alle Angaben sind eigens erstellte, fiktive Beispieldaten (Geräteauswahl nach Vorgabe von Finn, 06.11.2026). Sie stammen nicht aus einem realen Studio und werden nicht live synchronisiert."
+    "sourceNote": "Alle Angaben sind eigens erstellte, fiktive Beispieldaten (Geräteauswahl nach Vorgabe von Finn, 06.11.2026). Sie stammen nicht aus einem realen Studio und werden nicht live synchronisiert.",
+    "plansNote": "Feste Beispielpläne (Vorgabe Finn, 06.11.2026), nur aus den simulierten Geräten zusammengestellt. Keine Trainingsempfehlung."
   },
   "rules": {
     "setMinutes": 1,
@@ -522,5 +523,77 @@
       "y": 70,
       "label": "Eingang"
     }
-  }
+  },
+  "plans": [
+    {
+      "id": "oberkoerper",
+      "name": "Oberkörper-Tag",
+      "items": [
+        {
+          "type": "brustpresse",
+          "sets": 3
+        },
+        {
+          "type": "latzug",
+          "sets": 3
+        },
+        {
+          "type": "butterfly",
+          "sets": 3
+        },
+        {
+          "type": "rudermaschine",
+          "sets": 3
+        },
+        {
+          "type": "preacher",
+          "sets": 3
+        }
+      ]
+    },
+    {
+      "id": "unterkoerper",
+      "name": "Unterkörper-Tag",
+      "items": [
+        {
+          "type": "beinpresse",
+          "sets": 4
+        },
+        {
+          "type": "legextension",
+          "sets": 3
+        },
+        {
+          "type": "kabelturm",
+          "sets": 3
+        }
+      ]
+    },
+    {
+      "id": "ganzkoerper",
+      "name": "Ganzkörper-Tag",
+      "items": [
+        {
+          "type": "beinpresse",
+          "sets": 3
+        },
+        {
+          "type": "brustpresse",
+          "sets": 3
+        },
+        {
+          "type": "latzug",
+          "sets": 3
+        },
+        {
+          "type": "legextension",
+          "sets": 2
+        },
+        {
+          "type": "kabelturm",
+          "sets": 2
+        }
+      ]
+    }
+  ]
 }

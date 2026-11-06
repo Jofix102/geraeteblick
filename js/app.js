@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.6.0";
-import { createLocalStore } from "./store-local.js?v=0.6.0";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.6.1";
+import { createLocalStore } from "./store-local.js?v=0.6.1";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.6.0";
+} from "./queue-logic.js?v=0.6.1";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -16,9 +16,16 @@ let me = getIdentity();
 let idleMs = 20 * 60_000; // wird nach dem Laden aus rules.idleMinutes übernommen
 
 // ---------- Trainingsplan: pro Tab (= Gast) im sessionStorage ----------
-const PLAN_KEY = "geraeteblick.plan";
-let plan = (() => { try { return JSON.parse(sessionStorage.getItem(PLAN_KEY)) || []; } catch { return []; } })();
-const savePlan = () => { try { sessionStorage.setItem(PLAN_KEY, JSON.stringify(plan)); } catch { /* privater Modus */ } };
+// Nur feste Pläne aus devices.json („plans“). Gespeichert wird nur, welcher Plan gewählt ist und was erledigt ist.
+const PLAN_KEY = "geraeteblick.plan.v2";
+let planId = "", plan = [];
+(() => { try { const p = JSON.parse(sessionStorage.getItem(PLAN_KEY)); if (p) { planId = p.id; plan = p.items; } } catch { /* leer */ } })();
+const savePlan = () => { try { sessionStorage.setItem(PLAN_KEY, JSON.stringify({ id: planId, items: plan })); } catch { /* privater Modus */ } };
+const plans = () => data.plans || [];
+function choosePlan(id) {
+  const p = plans().find((x) => x.id === id); if (!p) return;
+  planId = id; plan = p.items.map((i) => ({ type: i.type, sets: i.sets, done: false })); savePlan();
+}
 function markPlanDone(type) {
   const i = plan.findIndex((p) => !p.done && p.type === type);
   if (i >= 0) { plan[i].done = true; savePlan(); }
@@ -205,13 +212,10 @@ document.addEventListener("click", (e) => {
     const [op, arg] = pb.dataset.plan.split(":"), i = Number(arg);
     if (op === "open") { renderPlanEditor(); $("#plan").showModal(); return; }
     if (op === "close") { $("#plan").close(); render(); return; }
-    if (op === "add") plan.push({ type: arg, sets: data.rules.defaultSets, done: false });
-    if (op === "del") plan.splice(i, 1);
-    if (op === "inc") plan[i].sets = Math.min(data.rules.maxSets, plan[i].sets + 1);
-    if (op === "dec") plan[i].sets = Math.max(1, plan[i].sets - 1);
-    if (op === "up" && i > 0) [plan[i - 1], plan[i]] = [plan[i], plan[i - 1]];
+    if (op === "choose") { choosePlan(arg); $("#plan").close(); render(); return; }
     if (op === "redo") plan.forEach((p) => { p.done = false; });
-    savePlan(); renderPlanEditor(); render();
+    if (op === "clear") { planId = ""; plan = []; }
+    savePlan(); render();
   }
 });
 document.addEventListener("change", (e) => {
@@ -503,9 +507,10 @@ function renderMine() {
   const train = w.training ? st.devices[w.training] : null;
   const blocked = train && !trainingFarEnough(train, r);
   const nextIdx = plan.findIndex((p) => !p.done && p.type !== train?.type && p.type !== (w.reserved && st.devices[w.reserved].type));
-  html += `<div class="section-head"><h3 class="group">Dein Plan</h3><button type="button" class="linklike" data-plan="open">${icon("edit")} ${plan.length ? "Bearbeiten" : "Anlegen"}</button></div>`;
+  const pName = plans().find((x) => x.id === planId)?.name;
+  html += `<div class="section-head"><h3 class="group">${plan.length && pName ? esc(pName) : "Dein Plan"}</h3>${plan.length ? `<button type="button" class="linklike" data-plan="open">${icon("edit")} Wechseln</button>` : ""}</div>`;
   if (!plan.length) {
-    html += `<button type="button" class="card plan-empty" data-plan="open">${icon("plus")} Übungen für heute auswählen</button>`;
+    html += `<div class="plan-choice">${planCards()}</div>`;
   } else {
     html += `<ol class="plan">${plan.map((p, i) => {
       const isCur = train?.type === p.type && !p.done && i === plan.findIndex((x) => !x.done && x.type === p.type);
@@ -525,17 +530,17 @@ function renderMine() {
   document.title = "Geräteblick – Training";
 }
 
+function planCards() {
+  return plans().map((p) => `<button type="button" class="plan-card${p.id === planId ? " current" : ""}" data-plan="choose:${p.id}">
+    <b>${esc(p.name)}</b><span class="meta">${p.items.length} Übungen</span>
+    <span class="plan-pics">${p.items.map((i) => `<img class="pic" src="${esc(typeIcon(i.type))}" alt="" title="${esc(typeName(i.type))}">`).join("")}</span></button>`).join("");
+}
+
 function renderPlanEditor() {
-  const dlg = $("#plan");
-  dlg.innerHTML = `<h2>Dein Plan</h2>
-    ${plan.length ? `<ol class="plan edit">${plan.map((p, i) => `<li class="plan-row">
-      <img class="pic" src="${esc(typeIcon(p.type))}" alt=""><span class="pr-main"><b>${esc(typeName(p.type))}</b></span>
-      <span class="stepper"><button type="button" data-plan="dec:${i}" aria-label="Ein Satz weniger">${icon("minus")}</button><b>${p.sets}</b><button type="button" data-plan="inc:${i}" aria-label="Ein Satz mehr">${icon("plus")}</button></span>
-      ${i ? `<button type="button" class="iconbtn" data-plan="up:${i}" aria-label="Nach oben">${icon("up")}</button>` : `<span class="iconbtn-space"></span>`}
-      <button type="button" class="iconbtn" data-plan="del:${i}" aria-label="Entfernen">${icon("close")}</button></li>`).join("")}</ol>` : `<p class="meta">Tippe Übungen an, um sie hinzuzufügen.</p>`}
-    <h3 class="group">Hinzufügen</h3>
-    <div class="pickgrid">${types().map((t) => `<button type="button" class="pick" data-plan="add:${t}"><img class="pic" src="${esc(typeIcon(t))}" alt=""><span>${esc(typeName(t))}</span></button>`).join("")}</div>
-    <button type="button" class="button primary wide" data-plan="close">Fertig</button>`;
+  $("#plan").innerHTML = `<h2>Plan wählen</h2>
+    <p class="meta">Der Fortschritt des aktuellen Plans wird zurückgesetzt.</p>
+    <div class="plan-choice">${planCards()}</div>
+    <button type="button" class="button wide" data-plan="close">Abbrechen</button>`;
 }
 
 function baseUrl() {
