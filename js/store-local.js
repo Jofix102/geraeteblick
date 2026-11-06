@@ -9,7 +9,7 @@
 //   reset()               -> Ausgangszustand aus der JSON-Datei wiederherstellen
 //   join / leave / start / finish / simulateStep -> { ok, code?, text? }
 //   Die Regeln selbst stehen in queue-logic.js (ohne Browser-Abhängigkeit, auch auf einem Server nutzbar).
-import * as logic from "./queue-logic.js";
+import * as logic from "./queue-logic.js?v=0.3.2";
 
 const STATE_KEY = "geraeteblick.state.v3.2";
 const CHANNEL = "geraeteblick";

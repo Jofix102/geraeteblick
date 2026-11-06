@@ -1,6 +1,6 @@
-import { getIdentity, touch } from "./identity.js";
-import { createLocalStore } from "./store-local.js";
-import { whereIs, isCompletelyFree, trainingFarEnough, isSim } from "./queue-logic.js";
+import { getIdentity, touch } from "./identity.js?v=0.3.2";
+import { createLocalStore } from "./store-local.js?v=0.3.2";
+import { whereIs, isCompletelyFree, trainingFarEnough, isSim } from "./queue-logic.js?v=0.3.2";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
