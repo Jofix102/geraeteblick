@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "0.3.4",
+    "version": "0.4.0",
     "studioName": "City Fit (fiktiv)",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
@@ -12,19 +12,35 @@
     "defaultSets": 3,
     "maxSets": 6,
     "reservationMinutes": 1,
+    "bridgeReservationMinutes": 2,
     "simTakesReservationSeconds": 20,
     "idleMinutes": 20,
-    "maxQueues": 1,
     "nextQueueAfterPercentSets": 50,
     "stillThereCheckMinute": 5,
-    "removeWithoutAnswerMinute": 6
+    "removeWithoutAnswerMinute": 6,
+    "botsMin": 10,
+    "botsMax": 15,
+    "botSpawnSeconds": [
+      20,
+      60
+    ],
+    "botTargetChangeMinutes": 5,
+    "botSets": [
+      2,
+      4
+    ]
   },
   "devices": [
     {
       "id": "latzug-links",
+      "type": "latzug",
       "name": "Latzug",
       "position": "links",
       "location": "Rückenbereich, Fensterseite, linkes Gerät",
+      "map": {
+        "x": 9,
+        "y": 30
+      },
       "exercise": "Latzug breit",
       "muscleGroup": "Rücken",
       "icon": "assets/latzug.svg",
@@ -37,42 +53,48 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 1,
-        "queue": [
-          {
-            "id": "sim-2",
-            "name": "Sim-Gast 2"
-          }
-        ],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "latzug-rechts",
+      "type": "latzug",
       "name": "Latzug",
       "position": "rechts",
       "location": "Rückenbereich, Fensterseite, rechtes Gerät",
+      "map": {
+        "x": 9,
+        "y": 42
+      },
       "exercise": "Latzug breit",
       "muscleGroup": "Rücken",
       "icon": "assets/latzug.svg",
       "initialState": {
-        "status": "free",
-        "occupiedBy": null,
+        "status": "occupied",
+        "occupiedBy": {
+          "id": "sim-2",
+          "name": "Sim-Gast 2"
+        },
         "reservedFor": null,
-        "plannedSets": 0,
+        "plannedSets": 3,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "rudern",
+      "type": "rudermaschine",
       "name": "Rudermaschine",
       "position": null,
       "location": "Rückenbereich, Mitte",
+      "map": {
+        "x": 24,
+        "y": 36
+      },
       "exercise": "Rudern sitzend",
       "muscleGroup": "Rücken",
       "icon": "assets/ruderzug.svg",
@@ -85,17 +107,21 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 2,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "brustpresse-links",
+      "type": "brustpresse",
       "name": "Brustpresse",
       "position": "links",
       "location": "Brustbereich, Eingangsseite, linkes Gerät",
+      "map": {
+        "x": 40,
+        "y": 58
+      },
       "exercise": "Brustpresse sitzend",
       "muscleGroup": "Brust",
       "icon": "assets/brustpresse.svg",
@@ -108,17 +134,21 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "brustpresse-rechts",
+      "type": "brustpresse",
       "name": "Brustpresse",
       "position": "rechts",
       "location": "Brustbereich, Eingangsseite, rechtes Gerät",
+      "map": {
+        "x": 52,
+        "y": 58
+      },
       "exercise": "Brustpresse sitzend",
       "muscleGroup": "Brust",
       "icon": "assets/brustpresse.svg",
@@ -128,17 +158,21 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "butterfly",
+      "type": "butterfly",
       "name": "Butterfly",
       "position": null,
       "location": "Brustbereich, an der Spiegelwand",
+      "map": {
+        "x": 90,
+        "y": 44
+      },
       "exercise": "Butterfly",
       "muscleGroup": "Brust",
       "icon": "assets/butterfly.svg",
@@ -151,22 +185,21 @@
         "reservedFor": null,
         "plannedSets": 4,
         "completedSets": 3,
-        "queue": [
-          {
-            "id": "sim-6",
-            "name": "Sim-Gast 6"
-          }
-        ],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "beinpresse",
+      "type": "beinpresse",
       "name": "Beinpresse",
       "position": null,
       "location": "Beinbereich, hinten links",
+      "map": {
+        "x": 9,
+        "y": 10
+      },
       "exercise": "Beinpresse",
       "muscleGroup": "Beine",
       "icon": "assets/beinpresse.svg",
@@ -179,17 +212,21 @@
         "reservedFor": null,
         "plannedSets": 4,
         "completedSets": 1,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "legextension-links",
+      "type": "legextension",
       "name": "Leg Extension",
       "position": "links",
       "location": "Beinbereich, hinten rechts, linkes Gerät",
+      "map": {
+        "x": 78,
+        "y": 10
+      },
       "exercise": "Beinstrecken",
       "muscleGroup": "Beine",
       "icon": "assets/legextension.svg",
@@ -199,17 +236,21 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "legextension-rechts",
+      "type": "legextension",
       "name": "Leg Extension",
       "position": "rechts",
       "location": "Beinbereich, hinten rechts, rechtes Gerät",
+      "map": {
+        "x": 89,
+        "y": 10
+      },
       "exercise": "Beinstrecken",
       "muscleGroup": "Beine",
       "icon": "assets/legextension.svg",
@@ -222,17 +263,21 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 2,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "preacher",
+      "type": "preacher",
       "name": "Preacher-Maschine",
       "position": null,
       "location": "Armbereich, neben den Kabeltürmen",
+      "map": {
+        "x": 72,
+        "y": 26
+      },
       "exercise": "Bizepscurls an der Preacher-Bank",
       "muscleGroup": "Bizeps",
       "icon": "assets/preacher.svg",
@@ -242,17 +287,21 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "kabelturm-1",
+      "type": "kabelturm",
       "name": "Kabelturm",
       "position": "1",
       "location": "Kabelzone an der Rückwand, links außen",
+      "map": {
+        "x": 27,
+        "y": 8
+      },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
       "icon": "assets/kabelturm.svg",
@@ -262,17 +311,21 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "kabelturm-2",
+      "type": "kabelturm",
       "name": "Kabelturm",
       "position": "2",
       "location": "Kabelzone an der Rückwand, links",
+      "map": {
+        "x": 35,
+        "y": 8
+      },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
       "icon": "assets/kabelturm.svg",
@@ -285,37 +338,48 @@
         "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 1,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "kabelturm-3",
+      "type": "kabelturm",
       "name": "Kabelturm",
       "position": "3",
       "location": "Kabelzone an der Rückwand, Mitte links",
+      "map": {
+        "x": 43,
+        "y": 8
+      },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
       "icon": "assets/kabelturm.svg",
       "initialState": {
-        "status": "free",
-        "occupiedBy": null,
+        "status": "occupied",
+        "occupiedBy": {
+          "id": "sim-11",
+          "name": "Sim-Gast 11"
+        },
         "reservedFor": null,
-        "plannedSets": 0,
-        "completedSets": 0,
-        "queue": [],
+        "plannedSets": 4,
+        "completedSets": 1,
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "kabelturm-4",
+      "type": "kabelturm",
       "name": "Kabelturm",
       "position": "4",
       "location": "Kabelzone an der Rückwand, Mitte rechts",
+      "map": {
+        "x": 51,
+        "y": 8
+      },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
       "icon": "assets/kabelturm.svg",
@@ -325,17 +389,21 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "kabelturm-5",
+      "type": "kabelturm",
       "name": "Kabelturm",
       "position": "5",
       "location": "Kabelzone an der Rückwand, rechts",
+      "map": {
+        "x": 59,
+        "y": 8
+      },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
       "icon": "assets/kabelturm.svg",
@@ -348,22 +416,21 @@
         "reservedFor": null,
         "plannedSets": 4,
         "completedSets": 2,
-        "queue": [
-          {
-            "id": "sim-11",
-            "name": "Sim-Gast 11"
-          }
-        ],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     },
     {
       "id": "kabelturm-6",
+      "type": "kabelturm",
       "name": "Kabelturm",
       "position": "6",
       "location": "Kabelzone an der Rückwand, rechts außen",
+      "map": {
+        "x": 67,
+        "y": 8
+      },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
       "icon": "assets/kabelturm.svg",
@@ -373,11 +440,87 @@
         "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
-        "queue": [],
         "startedAt": null,
         "lastSetAt": null,
-        "reservedAt": null
+        "reservedUntil": null
       }
     }
-  ]
+  ],
+  "initialQueues": {
+    "latzug": [
+      {
+        "id": "sim-12",
+        "name": "Sim-Gast 12",
+        "sets": 3
+      }
+    ],
+    "butterfly": [
+      {
+        "id": "sim-6",
+        "name": "Sim-Gast 6",
+        "sets": 3
+      }
+    ]
+  },
+  "map": {
+    "width": 100,
+    "height": 70,
+    "note": "Fiktiver Grundriss, Maße ohne Einheit",
+    "zones": [
+      {
+        "label": "Beine",
+        "x": 2,
+        "y": 2,
+        "w": 14,
+        "h": 16
+      },
+      {
+        "label": "Kabelzone",
+        "x": 22,
+        "y": 2,
+        "w": 50,
+        "h": 14
+      },
+      {
+        "label": "Beine",
+        "x": 74,
+        "y": 2,
+        "w": 24,
+        "h": 16
+      },
+      {
+        "label": "Rücken (Fenster)",
+        "x": 2,
+        "y": 22,
+        "w": 30,
+        "h": 28
+      },
+      {
+        "label": "Bizeps",
+        "x": 64,
+        "y": 20,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "label": "Brust",
+        "x": 82,
+        "y": 30,
+        "w": 16,
+        "h": 28
+      },
+      {
+        "label": "Brust",
+        "x": 34,
+        "y": 50,
+        "w": 26,
+        "h": 16
+      }
+    ],
+    "entrance": {
+      "x": 76,
+      "y": 70,
+      "label": "Eingang"
+    }
+  }
 }

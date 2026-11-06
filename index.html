@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Prototyp einer digitalen Warteschlange für Trainingsgeräte im Fitnessstudio (Simulation mit fiktiven Daten).">
   <title>Geräteblick</title>
-  <link rel="stylesheet" href="styles.css?v=0.3.4">
+  <link rel="stylesheet" href="styles.css?v=0.4.0">
   <script src="js/vendor/qrcode.js"></script>
-  <script type="module" src="js/app.js?v=0.3.4"></script>
+  <script type="module" src="js/app.js?v=0.4.0"></script>
 </head>
 <body>
   <header class="top">
@@ -20,6 +20,7 @@
   </header>
   <p class="sim" role="note">Simulation: Daten sind fiktiv und bleiben in diesem Browser. Zwei Tabs nebeneinander zeigen zwei Gäste.</p>
   <div id="mybar" class="mybar" role="status" aria-live="polite" hidden></div>
+  <dialog id="turn" class="turn" aria-label="Du bist dran"></dialog>
   <main id="view" tabindex="-1"></main>
   <div id="error" class="error" role="alert" hidden>
     <strong>Die Gerätedaten konnten nicht geladen werden.</strong>
@@ -27,7 +28,7 @@
     <button type="button" id="retry">Erneut laden</button>
   </div>
   <footer>
-    <p>Prototyp v0.3.4 zur Seminararbeit Web Technologie · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
+    <p>Prototyp v0.4 zur Seminararbeit Web Technologie · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
   </footer>
 </body>
 </html>

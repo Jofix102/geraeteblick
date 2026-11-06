@@ -1,13 +1,17 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.3.4";
-import { createLocalStore } from "./store-local.js?v=0.3.4";
-import { whereIs, isCompletelyFree, trainingFarEnough, isSim, phase, etaMs, msUntilFree, reservationMsLeft, trainingMs, joinWaitMs, presence } from "./queue-logic.js?v=0.3.4";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.0";
+import { createLocalStore } from "./store-local.js?v=0.4.0";
+import {
+  whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
+  reservationMsLeft, trainingMs, joinWaitMs, presence
+} from "./queue-logic.js?v=0.4.0";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-let data = null, store = null, flash = null, chosenSets = null, lastReserved = null, lastTraining = null, alertText = "", ownAction = false;
+let data = null, store = null, flash = null, chosenSets = null, alertText = "", ownAction = false;
+let lastReserved = null, lastTraining = null, turnShownFor = null;
 let me = getIdentity();
 let idleMs = 20 * 60_000; // wird nach dem Laden aus rules.idleMinutes übernommen
 
@@ -17,7 +21,24 @@ let lastTouch = 0;
   if (Date.now() - lastTouch > 5000) { lastTouch = Date.now(); touch(me); }
 }, { passive: true }));
 
+// ---------- Hilfen ----------
 const label = (d) => d.position ? `${d.name} ${d.position}` : d.name;
+const devById = (id) => data.devices.find((x) => x.id === id);
+const typeName = (type) => data.devices.find((x) => x.type === type).name;
+const typeIcon = (type) => data.devices.find((x) => x.type === type).icon;
+const devicesOf = (type) => data.devices.filter((x) => x.type === type);
+const types = () => [...new Set(data.devices.map((d) => d.type))];
+const feminine = (name) => /(presse|maschine|extension)$/i.test(name);
+const an = (id) => feminine(devById(id).name) ? "an der" : "am";
+const anType = (type) => feminine(typeName(type)) ? "an der" : "am";
+const who = (p) => p.id === me.id ? "Du" : esc(p.name);
+const mmss = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+const approx = (ms) => ms < 60_000 ? "unter 1 Min." : `ca. ${Math.ceil(ms / 60_000)} Min.`;
+// Platzhalter für Zeiten, die jede Sekunde aktualisiert werden (siehe updateClocksOnly).
+const clock = (kind, ref, extra = "") => `<span data-clock="${kind}" data-ref="${esc(ref)}"${extra}></span>`;
+const link = (id) => `<a data-nav href="?geraet=${encodeURIComponent(id)}">${esc(label(devById(id)))}</a>`;
+const btn = (action, ref, text, primary = false, go = "") =>
+  `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-ref="${esc(ref)}"${go ? ` data-go="${esc(go)}"` : ""}>${text}</button>`;
 
 function statusInfo(s) {
   if (s.status === "free") return { cls: "free", text: "Frei", icon: "✓" };
@@ -25,62 +46,93 @@ function statusInfo(s) {
   return { cls: "busy", text: "Belegt", icon: "●" };
 }
 
-const who = (p) => p.id === me.id ? "Du" : esc(p.name);
-const devById = (id) => data.devices.find((x) => x.id === id);
-// "am Latzug", aber "an der Brustpresse": Artikel aus dem Gerätenamen ableiten.
-const mmss = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
-const approx = (ms) => ms < 60_000 ? "unter 1 Min." : `ca. ${Math.ceil(ms / 60_000)} Min.`;
-const clock = (kind, id, extra = "") => `<span data-clock="${kind}" data-device="${esc(id)}"${extra}></span>`;
-const an = (id) => /(presse|maschine|extension)$/i.test(devById(id).name) ? "an der" : "am";
-
 function statusLine(s) {
-  if (isCompletelyFree(s)) return "Niemand trainiert hier, keine Warteschlange.";
-  const q = s.queue.length === 0 ? "niemand wartet" : s.queue.length === 1 ? "1 Person wartet" : `${s.queue.length} Personen warten`;
-  if (s.status === "reserved") return `Reserviert für ${who(s.reservedFor)}, ${q}.`;
-  const sets = s.plannedSets ? `${s.completedSets} von ${s.plannedSets} Sätzen erledigt` : "trainiert";
-  return `${who(s.occupiedBy)}: ${sets}, ${q}.`;
+  if (s.status === "free") return "Niemand trainiert hier.";
+  if (s.status === "reserved") return `Reserviert für ${who(s.reservedFor)}.`;
+  return `${who(s.occupiedBy)}: ${s.completedSets} von ${s.plannedSets} Sätzen erledigt.`;
 }
+
+const queueCount = (st, type) => (st.queues[type] || []).length;
+const waitingText = (n) => n === 0 ? "niemand wartet" : n === 1 ? "1 Person wartet" : `${n} Personen warten`;
 
 // ---------- Leiste "Dein Stand" (immer sichtbar, wenn du irgendwo dran bist) ----------
-// Nach dem Zeichnen sofort Zeiten eintragen (ohne erneut tick auszulösen, sonst Endlosschleife).
-let clockQueued = false;
-function fillClocksSoon() {
-  lastFull = Date.now();
-  if (clockQueued) return;
-  clockQueued = true;
-  queueMicrotask(() => { clockQueued = false; updateClocksOnly(); });
-}
-
 function renderBar() {
   const bar = $("#mybar");
   if (!store) { bar.hidden = true; return; }
-  const w = whereIs(store.getState(), me.id);
-  // Reservierung verloren, ohne zu starten: Hinweis zeigen.
+  const st = store.getState(), w = whereIs(st, me.id);
   if (lastReserved && !w.reserved && w.training !== lastReserved && !ownAction)
     alertText = `Deine Reservierung ${an(lastReserved)} ${label(devById(lastReserved))} ist abgelaufen. Der Nächste ist dran.`;
   if (lastTraining && !w.training && !ownAction)
     alertText = `Du wurdest ${an(lastTraining)} ${label(devById(lastTraining))} abgemeldet, weil ${data.rules.removeWithoutAnswerMinute} Minuten keine Rückmeldung kam.`;
-  lastReserved = w.reserved;
-  lastTraining = w.training;
-  ownAction = false;
-  const parts = alertText ? [`<p class="bar-line">${esc(alertText)} <button type="button" class="linklike" data-dismiss>OK</button></p>`] : [];
-  if (w.reserved) parts.push(`<p class="bar-line turn"><b>Du bist dran ${an(w.reserved)} ${esc(label(devById(w.reserved)))}!</b> <a class="button primary" data-nav href="?geraet=${w.reserved}">Jetzt hin</a></p>`);
-  if (w.reserved) parts[parts.length - 1] = parts[parts.length - 1].replace("</b> <a", `</b> ${clock("res", w.reserved)} <a`);
-  if (w.training && presence(store.getState().devices[w.training], data.rules, Date.now())?.state === "ask")
+  lastReserved = w.reserved; lastTraining = w.training; ownAction = false;
+
+  const parts = [];
+  if (alertText) parts.push(`<p class="bar-line">${esc(alertText)} <button type="button" class="linklike" data-dismiss>OK</button></p>`);
+  if (w.reserved) parts.push(`<p class="bar-line turn"><b>Du bist dran ${an(w.reserved)} ${esc(label(devById(w.reserved)))}!</b> ${clock("res", w.reserved)} <button type="button" class="button primary" data-showturn>Karte zeigen</button></p>`);
+  if (w.training && presence(st.devices[w.training], data.rules, Date.now())?.state === "ask")
     parts.push(`<p class="bar-line turn"><b>Bist du noch da?</b> Sonst wirst du in ${clock("pres", w.training)} abgemeldet. ${btn("here", w.training, "Ja, bin noch da", true)}</p>`);
-  if (w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?geraet=${w.training}">Öffnen</a></p>`);
-  if (w.queued) parts.push(`<p class="bar-line">Du bist <b>Nr. ${w.queued.position}</b> ${an(w.queued.device)} <b>${esc(label(devById(w.queued.device)))}</b>, dran in ${clock("eta", w.queued.device, ` data-pos="${w.queued.position}"`)} <a data-nav href="?geraet=${w.queued.device}">Ansehen</a> <button type="button" class="linklike" data-action="leave" data-device="${w.queued.device}">Verlassen</button></p>`);
+  if (w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?ansicht=ich">Öffnen</a></p>`);
+  if (w.queued) parts.push(`<p class="bar-line">Du bist <b>Nr. ${w.queued.position}</b> ${anType(w.queued.type)} <b>${esc(typeName(w.queued.type))}</b>, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)} <a data-nav href="?ansicht=ich">Ansehen</a> <button type="button" class="linklike" data-action="leave" data-ref="${esc(w.queued.type)}">Verlassen</button></p>`);
   bar.innerHTML = parts.join("");
   bar.hidden = parts.length === 0;
+  renderTurn(st, w);
+}
+
+// ---------- Du bist dran: Grundriss öffnet sich, bis du annimmst oder freigibst ----------
+function renderTurn(st, w) {
+  const dlg = $("#turn");
+  if (!w.reserved) {
+    if (dlg.open) dlg.close();
+    turnShownFor = null;
+    return;
+  }
+  const d = devById(w.reserved), s = st.devices[w.reserved];
+  dlg.innerHTML = `
+    <h2>Du bist dran: ${esc(label(d))}</h2>
+    <p>📍 ${esc(d.location)}. Noch <b>${clock("res", d.id)}</b> Zeit, um es zu beziehen.</p>
+    ${mapSvg(d.id)}
+    <p class="meta">Du hast ${s.reservedFor.sets} ${s.reservedFor.sets === 1 ? "Satz" : "Sätze"} angegeben.</p>
+    <div class="actions">${btn("start", d.id, w.training ? `${an(w.training) === "am" ? "Am" : "An der"} ${esc(label(devById(w.training)))} beenden und hier starten` : "Gerät beziehen, Training starten", true, "?ansicht=ich")}
+    ${btn("finish", d.id, "Platz freigeben")}</div>`;
+  if (turnShownFor !== w.reserved) {
+    turnShownFor = w.reserved;
+    if (!dlg.open && typeof dlg.showModal === "function") dlg.showModal();
+    signal();
+  }
+}
+
+// Ton und Vibration (Vibration nur auf Geräten, die sie unterstützen, z. B. Android).
+function signal() {
+  try { const a = new Audio("assets/dran.wav"); a.play().catch(() => {}); } catch { /* kein Ton möglich */ }
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+}
+
+// Grundriss als SVG aus den Koordinaten in devices.json; hervorgehobenes Gerät pulsiert.
+function mapSvg(highlightId) {
+  const m = data.map, st = store.getState();
+  const zones = m.zones.map((z) => `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="2" class="zone"/>
+    <text x="${z.x + 1.5}" y="${z.y + z.h - 1.5}" class="zone-label">${esc(z.label)}</text>`).join("");
+  const dots = data.devices.map((d) => {
+    const s = st.devices[d.id], hi = d.id === highlightId;
+    return `<g class="spot ${s.status}${hi ? " hi" : ""}"><title>${esc(label(d))}</title>
+      ${hi ? `<circle cx="${d.map.x}" cy="${d.map.y}" r="6" class="pulse"/>` : ""}
+      <circle cx="${d.map.x}" cy="${d.map.y}" r="${hi ? 3.6 : 2.4}"/></g>`;
+  }).join("");
+  const e = m.entrance;
+  return `<svg class="map" viewBox="0 0 ${m.width} ${m.height + 4}" role="img" aria-label="Grundriss: ${esc(label(devById(highlightId)))} ist markiert">
+    <rect x="0.5" y="0.5" width="${m.width - 1}" height="${m.height - 1}" class="floor"/>${zones}${dots}
+    <text x="${e.x}" y="${e.y + 3}" class="entrance" text-anchor="middle">▲ ${esc(e.label)}</text></svg>`;
 }
 
 // ---------- Aktionen (Knöpfe mit data-action) ----------
+const sets = () => chosenSets || data.rules.defaultSets;
 const ACTIONS = {
-  join: (id) => store.join(id, me),
-  "join-switch": (id) => store.join(id, me, { switchQueue: true }),
-  leave: (id) => store.leave(id, me.id),
-  start: (id) => store.start(id, me, { sets: chosenSets }),
-  "start-keep": (id) => store.start(id, me, { keepQueue: true, sets: chosenSets }),
+  join: (type) => store.join(type, me, { sets: sets() }),
+  "join-switch": (type) => store.join(type, me, { switchQueue: true, sets: sets() }),
+  leave: (type) => store.leave(type, me.id),
+  start: (id) => store.start(id, me, chosenSets ? { sets: chosenSets } : {}),
+  "start-keep": (id) => store.start(id, me, { keepQueue: true, sets: sets() }),
+  "start-type": (type) => { const id = freeDeviceOfType(store.getState(), type); return id ? store.start(id, me, { sets: sets() }) : { ok: false, text: "Gerade ist kein Gerät frei." }; },
   set: (id) => store.completeSet(id, me.id),
   here: (id) => store.confirmPresence(id, me.id),
   finish: (id) => store.finish(id, me.id),
@@ -88,7 +140,7 @@ const ACTIONS = {
 };
 const DONE = {
   join: "Du stehst jetzt in der Warteschlange.", "join-switch": "Gewechselt: Du stehst jetzt hier an.",
-  leave: "Du hast die Warteschlange verlassen.", start: "Training gestartet.",
+  leave: "Du hast die Warteschlange verlassen.", start: "Training gestartet.", "start-type": "Training gestartet.",
   "start-keep": "Training gestartet. Dein Platz in der Warteschlange bleibt.", finish: "Gerät freigegeben.",
   sim: "Simulation: Sim-Gast ist weiter.", set: "Satz abgehakt. Jetzt Pause.", here: "Danke, du bleibst angemeldet."
 };
@@ -96,22 +148,27 @@ document.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-action]");
   if (!b || !store) return;
   ownAction = true;
-  const result = ACTIONS[b.dataset.action](b.dataset.device);
+  const result = ACTIONS[b.dataset.action](b.dataset.ref);
   flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? "Letzter Satz geschafft. Das Gerät ist frei für den Nächsten." : DONE[b.dataset.action] };
+  if (result.ok && b.dataset.action === "start-type") return navigate(`?geraet=${whereIs(store.getState(), me.id).training}`);
   if (result.ok && b.dataset.go) return navigate(b.dataset.go);
   render();
 });
 document.addEventListener("click", (e) => {
   if (e.target.matches("[data-dismiss]")) { alertText = ""; render(); }
+  if (e.target.matches("[data-showturn]")) { turnShownFor = null; render(); }
 });
 document.addEventListener("change", (e) => {
   if (e.target.matches("select[data-sets]")) chosenSets = Number(e.target.value);
 });
+// "Du bist dran" lässt sich nicht mit Esc wegklicken: annehmen oder freigeben.
+document.addEventListener("cancel", (e) => { if (e.target.id === "turn") e.preventDefault(); }, true);
 
 // ---------- Routing (Ansicht steckt in der Adresse, damit QR-Links funktionieren) ----------
 function navigate(search) {
   history.pushState(null, "", search || location.pathname);
   render();
+  window.scrollTo(0, 0);
 }
 document.addEventListener("click", (e) => {
   const a = e.target.closest("a[data-nav]");
@@ -128,35 +185,145 @@ function render() {
   document.querySelectorAll("[data-tab]").forEach((t) => t.setAttribute("aria-current", String(t.dataset.tab === tab)));
   if (!data) return;
   if (q.has("geraet")) renderDevice(q.get("geraet"));
-  else if (q.get("ansicht") === "qr") renderQr();
-  else if (q.get("ansicht") === "ich") renderMine();
+  else if (tab === "qr") renderQr();
+  else if (tab === "ich") renderMine();
   else renderList();
   fillClocksSoon();
 }
 
+// ---------- Bausteine ----------
+function flashHtml() {
+  if (!flash) return "";
+  const f = flash; flash = null;
+  return `<p class="flash ${f.ok ? "ok" : "bad"}" role="status">${esc(f.text)}</p>`;
+}
+
+function setsPicker() {
+  const r = data.rules, n = sets();
+  const opts = Array.from({ length: r.maxSets }, (_, i) => i + 1)
+    .map((i) => `<option value="${i}"${i === n ? " selected" : ""}>${i} ${i === 1 ? "Satz" : "Sätze"} (${trainingMs(i, r) / 60_000} Min.)</option>`).join("");
+  return `<label class="sets">Meine Sätze: <select data-sets>${opts}</select></label>`;
+}
+
+/** Was darf ich für diesen Gerätetyp tun? Liefert einen Knopf, einen Hinweis (<b>) oder nichts. */
+function typeAction(st, w, type) {
+  const r = data.rules;
+  if (w.queued?.type === type) return `<b>du: Nr. ${w.queued.position}</b>`;
+  if (w.training && st.devices[w.training].type === type) return "<b>du trainierst hier</b>";
+  if (w.reserved && st.devices[w.reserved].type === type) return "<b>du bist dran</b>";
+  const free = freeDeviceOfType(st, type);
+  if (free) {
+    if (w.training) return "";
+    if (w.queued) return btn("start-keep", free, "Hier überbrücken", false, `?geraet=${free}`);
+    return btn("start-type", type, "Freies Gerät nehmen");
+  }
+  if (w.training && !trainingFarEnough(st.devices[w.training], r)) return "";
+  return btn(w.queued ? "join-switch" : "join", type, w.queued ? "Wechseln: hier anstellen" : "Anstellen");
+}
+
+function typeCard(st, w, type) {
+  const devs = devicesOf(type), free = devs.filter((d) => st.devices[d.id].status === "free").length;
+  const n = queueCount(st, type);
+  const chips = devs.map((d) => {
+    const s = st.devices[d.id], si = statusInfo(s);
+    const extra = s.status === "occupied" ? ` · Satz ${Math.min(s.completedSets + 1, s.plannedSets)}/${s.plannedSets}, frei in ${clock("free", d.id)}` : "";
+    return `<li><a class="chip" data-nav href="?geraet=${encodeURIComponent(d.id)}"><span class="pill ${si.cls}">${si.icon}</span> ${esc(d.position || d.name)}<span class="meta">${extra}</span></a></li>`;
+  }).join("");
+  return `<li class="type-card">
+    <div class="type-head"><img src="${esc(typeIcon(type))}" alt=""><div><b>${esc(typeName(type))}</b>
+      <span class="meta">${devs.length > 1 ? `${devs.length} Geräte, ${free} frei` : free ? "frei" : "belegt"} · ${waitingText(n)}${freeDeviceOfType(st, type) ? "" : ` · Wartezeit ${clock("join", type)}`}</span></div></div>
+    <ul class="chips">${chips}</ul>
+    <div class="type-action">${typeAction(st, w, type)}</div></li>`;
+}
+
+function queueHtml(st, type) {
+  const q = st.queues[type] || [];
+  if (!q.length) return "";
+  const many = devicesOf(type).length > 1;
+  return `<h3 class="group">Warteschlange ${esc(typeName(type))}${many ? ` (gemeinsam für alle ${devicesOf(type).length} Geräte)` : ""}</h3>
+    <ol class="queue">${q.map((p, i) => `<li${p.id === me.id ? ' class="me-entry"' : ""}>${p.id === me.id ? "<b>Du</b>" : esc(p.name)} · ${p.sets} Sätze · dran in ${clock("eta", type, ` data-pos="${i + 1}"`)}</li>`).join("")}</ol>`;
+}
+
+// Fortschritt am Gerät: Punkte je Satz, Balken und Restzeit.
+function progressHtml(d, s) {
+  if (s.status === "occupied" && s.plannedSets) {
+    const dots = Array.from({ length: s.plannedSets }, (_, i) => `<span class="dot${i < s.completedSets ? " done" : ""}" aria-hidden="true"></span>`).join("");
+    return `<div class="progress" aria-label="${s.completedSets} von ${s.plannedSets} Sätzen erledigt">
+      <div class="dots">${dots}</div>
+      <div class="bar"><span data-clock="bar" data-ref="${esc(d.id)}"></span></div>
+      <p class="meta">${clock("phase", d.id)} · frei in ${clock("free", d.id)}</p></div>`;
+  }
+  if (s.status === "reserved") return `<p class="meta">Reservierung läuft noch ${clock("res", d.id)}.</p>`;
+  return "";
+}
+
+// Schneller frei: anderer Gerätetyp derselben Muskelgruppe mit kürzerer Wartezeit (mind. 1 Min. Vorteil).
+function alternativesHtml(st, w, type) {
+  const r = data.rules, now = Date.now();
+  const mine = w.queued?.type === type;
+  const myWait = mine ? etaMs(st, type, w.queued.position, r, now) : joinWaitMs(st, type, r, now);
+  if (myWait < 60_000) return "";
+  const group = devicesOf(type)[0].muscleGroup;
+  const better = types()
+    .filter((t) => t !== type && devicesOf(t)[0].muscleGroup === group && t !== w.queued?.type && (!w.training || st.devices[w.training].type !== t))
+    .map((t) => ({ t, wait: joinWaitMs(st, t, r, now) }))
+    .filter((c) => c.wait + 60_000 < myWait)
+    .sort((a, b) => a.wait - b.wait);
+  if (!better.length) return "";
+  return `<section class="alt" aria-label="Schneller frei"><h3 class="group">Schneller frei (${esc(group)}) statt ${mine ? clock("eta", type, ` data-pos="${w.queued.position}"`) : clock("join", type)}</h3>
+    <ul>${better.map((c) => `<li><span><b>${esc(typeName(c.t))}</b>: ${c.wait === 0 ? "jetzt frei" : `dran in ${clock("join", c.t)}`}</span>${typeAction(st, w, c.t)}</li>`).join("")}</ul></section>`;
+}
+
+// Was kann ich an diesem einzelnen Gerät tun?
+function deviceActionsHtml(st, w, d) {
+  const s = st.devices[d.id], r = data.rules;
+  if (s.occupiedBy?.id === me.id)
+    return `<p class="clockbig">${clock("phase", d.id)}</p>
+      ${btn("set", d.id, `✓ Satz ${s.completedSets + 1} von ${s.plannedSets} geschafft`, true)}
+      ${btn("finish", d.id, "Training abbrechen, Gerät freigeben")}
+      <p class="meta">Hake jeden Satz direkt ab. So sehen die Wartenden, wie weit du bist.</p>`;
+  if (s.reservedFor?.id === me.id)
+    return `<p><b>Du bist dran.</b> Noch ${clock("res", d.id)} Zeit zum Starten.</p>
+      ${btn("start", d.id, "Gerät beziehen, Training starten", true)} ${btn("finish", d.id, "Platz freigeben")}`;
+  if (isCompletelyFree(st, d.id)) {
+    if (w.training) return `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Beende dort zuerst dein Training.</p>`;
+    if (w.queued) return `<p>Das Gerät ist frei. Du stehst ${anType(w.queued.type)} ${esc(typeName(w.queued.type))} an (Nr. ${w.queued.position}, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}).</p>
+      ${setsPicker()}${btn("start-keep", d.id, "Hier überbrücken, Platz behalten", true)}${btn("start", d.id, "Wechseln: Platz aufgeben und hier trainieren")}`;
+    return `${setsPicker()}${btn("start", d.id, "Training starten", true)}`;
+  }
+  const action = typeAction(st, w, d.type);
+  if (action.startsWith("<b>")) return `<p>${action}</p>`;
+  if (!action) return w.training
+    ? `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Anstellen geht erst nach mehr als ${r.nextQueueAfterPercentSets} % deiner Sätze.</p>`
+    : "";
+  const many = devicesOf(d.type).length > 1;
+  return `<p>Wartezeit: ${clock("join", d.type)}.${many ? ` Du bekommst das erste freie Gerät vom Typ ${esc(typeName(d.type))}.` : ""}</p>
+    ${setsPicker()}${action.replace('class="button"', 'class="button primary"')}`;
+}
+
+function simHtml(d, s) {
+  const sim = (s.status === "occupied" && isSim(s.occupiedBy)) ? `${esc(s.occupiedBy.name)} sofort fertig`
+    : (s.status === "reserved" && isSim(s.reservedFor)) ? `${esc(s.reservedFor.name)} startet sofort` : "";
+  return sim ? `<p class="simctl">Simulation: ${btn("sim", d.id, sim)}</p>` : "";
+}
+
 // ---------- Ansichten ----------
 function renderList() {
-  const state = store.getState();
-  const free = data.devices.filter((d) => state.devices[d.id].status === "free").length;
+  const st = store.getState(), w = whereIs(st, me.id);
+  const free = data.devices.filter((d) => st.devices[d.id].status === "free").length;
+  const groups = [...new Set(data.devices.map((d) => d.muscleGroup))];
   $("#view").innerHTML = `
     <h2>Geräte in ${esc(data.meta.studioName)}</h2>
-    <p class="meta">${data.devices.length} Geräte, ${free} frei. Tippe ein Gerät an oder scanne den QR-Code am Gerät.</p>
-    ${[...new Set(data.devices.map((d) => d.muscleGroup))].map((group) => `
-      <h3 class="group">${esc(group)}</h3>
-      <ul class="list">${data.devices.filter((d) => d.muscleGroup === group).map((d) => {
-        const s = state.devices[d.id], st = statusInfo(s);
-        const pos = s.queue.findIndex((p) => p.id === me.id);
-        const mine = s.occupiedBy?.id === me.id ? " · <b>du trainierst</b>" : s.reservedFor?.id === me.id ? " · <b>du bist dran</b>" : pos >= 0 ? ` · <b>du: Nr. ${pos + 1}</b>` : "";
-        return `<li><a class="row" data-nav href="?geraet=${encodeURIComponent(d.id)}">
-          <img src="${esc(d.icon)}" alt="">
-          <span class="row-main"><b>${esc(label(d))}</b><span class="meta">${s.status === "occupied" && s.plannedSets ? `Satz ${Math.min(s.completedSets + 1, s.plannedSets)}/${s.plannedSets} · frei in ${clock("free", d.id)}` : esc(d.exercise)} · ${s.queue.length} wartend${mine}</span></span>
-          <span class="pill ${st.cls}">${st.icon} ${st.text}</span></a></li>`;
-      }).join("")}</ul>`).join("")}`;
+    <p class="meta">${data.devices.length} Geräte, ${free} frei. Du stellst dich je Gerätetyp an und bekommst das erste freie Gerät.</p>
+    ${flashHtml()}
+    <div class="list-tools">${setsPicker()}</div>
+    ${groups.map((g) => `<h3 class="group">${esc(g)}</h3>
+      <ul class="types">${types().filter((t) => devicesOf(t)[0].muscleGroup === g).map((t) => typeCard(st, w, t)).join("")}</ul>`).join("")}`;
   document.title = "Geräteblick – Übersicht";
 }
 
 function renderDevice(id) {
-  const d = data.devices.find((x) => x.id === id);
+  const d = devById(id);
   if (!d) {
     $("#view").innerHTML = `
       <div class="error" role="alert"><strong>Gerät nicht gefunden.</strong>
@@ -165,8 +332,7 @@ function renderDevice(id) {
     document.title = "Geräteblick – Gerät nicht gefunden";
     return;
   }
-  const s = store.getState().devices[d.id], st = statusInfo(s);
-  const twin = data.devices.filter((x) => x.name === d.name && x.id !== d.id);
+  const st = store.getState(), w = whereIs(st, me.id), s = st.devices[d.id], si = statusInfo(s);
   $("#view").innerHTML = `
     <a class="back" data-nav href="?">← Alle Geräte</a>
     <article class="device">
@@ -175,158 +341,49 @@ function renderDevice(id) {
         <h2>${esc(label(d))}</h2>
         <p class="meta">${esc(d.exercise)} · ${esc(d.muscleGroup)}</p>
         <p class="where">📍 ${esc(d.location)}</p>
-        <p class="pill big ${st.cls}">${st.icon} ${st.text}</p>
-        <p>${statusLine(s)}</p>
+        <p class="pill big ${si.cls}">${si.icon} ${si.text}</p>
+        <p>${statusLine(s)} ${esc(typeName(d.type))}: ${waitingText(queueCount(st, d.type))}.</p>
         ${progressHtml(d, s)}
       </div>
     </article>
-    ${twin.length ? `<p class="hint">Im Studio gibt es ${twin.length + 1}× ${esc(d.name)}. Du siehst <b>${esc(label(d))}</b>. Wechseln zu: ${twin.map((t) => `<a data-nav href="?geraet=${encodeURIComponent(t.id)}">${esc(label(t))}</a>`).join(", ")}</p>` : ""}
     ${flashHtml()}
-    <section class="actions" aria-label="Was möchtest du tun?">${actionsHtml(d, s)}</section>
-    ${alternativesHtml(d, s)}
-    ${queueHtml(s, d.id)}
+    <section class="actions" aria-label="Was möchtest du tun?">${deviceActionsHtml(st, w, d)}</section>
+    ${alternativesHtml(st, w, d.type)}
+    ${queueHtml(st, d.type)}
+    <details class="mapbox"><summary>Wo steht das Gerät?</summary>${mapSvg(d.id)}</details>
     ${simHtml(d, s)}`;
   document.title = `Geräteblick – ${label(d)}`;
 }
 
-function flashHtml() {
-  if (!flash) return "";
-  const f = flash; flash = null;
-  return `<p class="flash ${f.ok ? "ok" : "bad"}" role="status">${esc(f.text)}</p>`;
-}
-
-const btn = (action, id, text, primary = false, go = false) =>
-  `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-device="${esc(id)}"${go ? ` data-go="?geraet=${esc(id)}"` : ""}>${text}</button>`;
-const link = (id) => `<a data-nav href="?geraet=${encodeURIComponent(id)}">${esc(label(devById(id)))}</a>`;
-
-// Wichtigste Aktion zuerst (primary), Alternativen darunter.
-function actionsHtml(d, s) {
-  const st = store.getState(), w = whereIs(st, me.id), rules = data.rules;
-  if (s.occupiedBy?.id === me.id)
-    return `<p class="clockbig">${clock("phase", d.id)}</p>
-      ${btn("set", d.id, `✓ Satz ${s.completedSets + 1} von ${s.plannedSets} geschafft`, true)}
-      ${btn("finish", d.id, "Training abbrechen, Gerät freigeben")}
-      <p class="meta">Hake jeden Satz direkt ab. So sehen die Wartenden, wie weit du bist.</p>`;
-  if (s.reservedFor?.id === me.id)
-    return `<p><b>Du bist dran.</b> Das Gerät ist für dich reserviert. Noch ${clock("res", d.id)} Zeit zum Starten, sonst ist der Nächste dran.</p>
-      ${setsPicker()}
-      ${btn("start", d.id, w.training ? `${an(w.training) === "am" ? "Am" : "An der"} ${esc(label(devById(w.training)))} beenden und hier starten` : "Training starten", true)}
-      ${btn("finish", d.id, "Platz freigeben")}`;
-  const qi = s.queue.findIndex((p) => p.id === me.id);
-  if (qi >= 0)
-    return `<p>Du bist <b>Nr. ${qi + 1}</b> in der Warteschlange${qi === 0 ? ", als Nächste/r dran" : `, ${qi} vor dir`}.</p>
-      ${btn("leave", d.id, "Warteschlange verlassen")}`;
-  if (isCompletelyFree(s)) {
-    if (w.training) return `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Beende dort zuerst dein Training.</p>`;
-    if (w.queued) return `<p>Das Gerät ist völlig frei. Du stehst ${an(w.queued.device)} ${link(w.queued.device)} an (Nr. ${w.queued.position}, dran in ${clock("eta", w.queued.device, ` data-pos="${w.queued.position}"`)}).</p>
-      ${setsPicker()}
-      ${btn("start-keep", d.id, `Hier trainieren, Platz ${an(w.queued.device)} ${esc(label(devById(w.queued.device)))} behalten`, true)}
-      ${btn("start", d.id, `Wechseln: Platz aufgeben und hier trainieren`)}`;
-    return `${setsPicker()}${btn("start", d.id, "Training starten", true)}`;
-  }
-  const nr = s.queue.length + 1;
-  if (w.training && !trainingFarEnough(st.devices[w.training], rules))
-    return `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Anstellen für das nächste Gerät geht erst nach mehr als ${rules.nextQueueAfterPercentSets} % deiner Sätze (Sätze folgen in Schritt 3).</p>`;
-  if (w.queued)
-    return `<p>Du stehst schon ${an(w.queued.device)} ${link(w.queued.device)} an (Nr. ${w.queued.position}). Du kannst nur in einer Warteschlange gleichzeitig stehen.</p>
-      ${btn("join-switch", d.id, `Wechseln: hier anstellen (Nr. ${nr})`, true)}`;
-  return `<p>Wartezeit für dich: ${clock("eta", d.id, ` data-pos="${nr}"`)}</p>${btn("join", d.id, `Anstellen (du wärst Nr. ${nr})`, true)}`;
-}
-
-// Schneller frei: Zwillingsgerät oder gleiche Muskelgruppe mit kürzerer Wartezeit (mind. 1 Min. Vorteil).
-function alternativesHtml(d, s) {
-  const st = store.getState(), w = whereIs(st, me.id), r = data.rules, now = Date.now();
-  if (s.occupiedBy?.id === me.id || s.reservedFor?.id === me.id) return "";
-  const myPos = s.queue.findIndex((p) => p.id === me.id) + 1;
-  const myWait = myPos ? etaMs(s, myPos, r, now) : joinWaitMs(s, r, now);
-  if (myWait < 60_000) return "";
-  const blocked = w.training && !trainingFarEnough(st.devices[w.training], r);
-  const better = data.devices
-    .filter((x) => x.muscleGroup === d.muscleGroup && x.id !== d.id && x.id !== w.training && x.id !== w.queued?.device)
-    .map((x) => ({ x, s: st.devices[x.id], wait: joinWaitMs(st.devices[x.id], r, now), twin: x.name === d.name }))
-    .filter((c) => c.wait + 60_000 < myWait)
-    .sort((a, b) => (b.twin - a.twin) || (a.wait - b.wait))
-    .slice(0, 3);
-  if (!better.length) return "";
-  const rows = better.map((c) => {
-    const free = isCompletelyFree(c.s);
-    let action = "";
-    if (free && !w.training) action = btn("start", c.x.id, w.queued ? "Wechseln und dort trainieren" : "Dort trainieren", false, true);
-    else if (!free && !blocked) action = btn(w.queued ? "join-switch" : "join", c.x.id, w.queued ? "Wechseln: dort anstellen" : "Dort anstellen", false, true);
-    return `<li><span>${c.twin ? "<b>Gleiches Gerät:</b> " : ""}${link(c.x.id)}: ${free ? "jetzt frei" : `dran in ${clock("join", c.x.id)}`}</span>${action}</li>`;
-  }).join("");
-  return `<section class="alt" aria-label="Schneller frei"><h3 class="group">Schneller frei (${esc(d.muscleGroup)}) statt ${clock(myPos ? "eta" : "join", d.id, myPos ? ` data-pos="${myPos}"` : "")} hier</h3><ul>${rows}</ul></section>`;
-}
-
 // Tab "Mein Training": aktuelles Gerät, Warteschlange, nächstes Gerät.
 function renderMine() {
-  const st = store.getState(), w = whereIs(st, me.id), r = data.rules, now = Date.now();
+  const st = store.getState(), w = whereIs(st, me.id), r = data.rules;
   const cur = w.training || w.reserved;
   let html = `<h2>Mein Training</h2>${flashHtml()}<h3 class="group">Aktuelles Gerät</h3>`;
   if (cur) {
     const d = devById(cur), s = st.devices[cur];
     html += `<article class="device"><img src="${esc(d.icon)}" alt="" class="device-img"><div>
-      <h2>${link(cur)}</h2>${progressHtml(d, s)}<section class="actions">${actionsHtml(d, s)}</section></div></article>`;
+      <h2>${link(cur)}</h2>${progressHtml(d, s)}<section class="actions">${deviceActionsHtml(st, w, d)}</section></div></article>`;
   } else html += `<p class="meta">Du trainierst gerade nicht. Wähle unten ein Gerät oder scanne den QR-Code am Gerät.</p>`;
 
   html += `<h3 class="group">Warteschlange</h3>`;
   if (w.queued) {
-    const d = devById(w.queued.device), s = st.devices[w.queued.device];
-    html += `<div class="card"><p>Du bist <b>Nr. ${w.queued.position}</b> ${an(d.id)} ${link(d.id)}, dran in ${clock("eta", d.id, ` data-pos="${w.queued.position}"`)}.</p>
-      ${btn("leave", d.id, "Warteschlange verlassen")}${alternativesHtml(d, s)}</div>`;
+    const t = w.queued.type;
+    html += `<div class="card"><p>Du bist <b>Nr. ${w.queued.position}</b> ${anType(t)} <b>${esc(typeName(t))}</b> (${w.queued.sets} Sätze), dran in ${clock("eta", t, ` data-pos="${w.queued.position}"`)}.</p>
+      ${btn("leave", t, "Warteschlange verlassen")}${alternativesHtml(st, w, t)}</div>`;
   } else html += `<p class="meta">Du stehst nirgends an.</p>`;
 
   const train = w.training ? st.devices[w.training] : null;
-  const blocked = train && !trainingFarEnough(train, r);
   html += `<h3 class="group">Nächstes Gerät</h3>`;
-  if (blocked) html += `<p class="meta">Anstellen geht ab mehr als ${r.nextQueueAfterPercentSets} % deiner Sätze, also nach Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1} von ${train.plannedSets}.</p>`;
-  const rows = data.devices.filter((x) => x.id !== cur)
-    .map((x) => ({ x, s: st.devices[x.id], wait: joinWaitMs(st.devices[x.id], r, now) }))
-    .sort((a, b) => a.wait - b.wait)
-    .map(({ x, s }) => {
-      const free = isCompletelyFree(s), queuedHere = w.queued?.device === x.id;
-      let action = "";
-      if (queuedHere) action = `<b>du: Nr. ${w.queued.position}</b>`;
-      else if (free && !w.training) action = btn("start", x.id, w.queued ? "Wechseln, starten" : "Starten", false, true);
-      else if (!free && !blocked) action = btn(w.queued ? "join-switch" : "join", x.id, w.queued ? "Wechseln" : "Anstellen");
-      return `<li class="next-row"><span>${link(x.id)}<span class="meta"> · ${esc(x.muscleGroup)} · ${free ? "frei" : `dran in ${clock("join", x.id)}`}</span></span>${action}</li>`;
-    }).join("");
-  html += `<ul class="next">${rows}</ul>`;
+  if (train && !trainingFarEnough(train, r))
+    html += `<p class="meta">Anstellen geht ab mehr als ${r.nextQueueAfterPercentSets} % deiner Sätze, also nach Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1} von ${train.plannedSets}.</p>`;
+  const now = Date.now();
+  const list = types().filter((t) => !cur || st.devices[cur].type !== t)
+    .map((t) => ({ t, wait: joinWaitMs(st, t, r, now) })).sort((a, b) => a.wait - b.wait);
+  html += `<div class="list-tools">${setsPicker()}</div><ul class="next">${list.map(({ t, wait }) => `<li class="next-row">
+      <span><b>${esc(typeName(t))}</b><span class="meta"> · ${esc(devicesOf(t)[0].muscleGroup)} · ${wait === 0 ? "frei" : `dran in ${clock("join", t)}`}</span></span>${typeAction(st, w, t)}</li>`).join("")}</ul>`;
   $("#view").innerHTML = html;
   document.title = "Geräteblick – Mein Training";
-}
-
-function setsPicker() {
-  const r = data.rules, n = chosenSets || r.defaultSets;
-  const opts = Array.from({ length: r.maxSets }, (_, i) => i + 1)
-    .map((i) => `<option value="${i}"${i === n ? " selected" : ""}>${i} ${i === 1 ? "Satz" : "Sätze"} (${trainingMs(i, r) / 60_000} Min.)</option>`).join("");
-  return `<label class="sets">Wie viele Sätze? <select data-sets>${opts}</select></label>
-    <p class="meta">Pro Satz ${r.setMinutes} Min., dazwischen ${r.restMinutes} Min. Pause.</p>`;
-}
-
-// Fortschritt am Gerät: Punkte je Satz, Balken und Restzeit (Uhr läuft sekündlich).
-function progressHtml(d, s) {
-  if (s.status === "occupied" && s.plannedSets) {
-    const dots = Array.from({ length: s.plannedSets }, (_, i) => `<span class="dot${i < s.completedSets ? " done" : ""}" aria-hidden="true"></span>`).join("");
-    return `<div class="progress" aria-label="${s.completedSets} von ${s.plannedSets} Sätzen erledigt">
-      <div class="dots">${dots}</div>
-      <div class="bar"><span data-clock="bar" data-device="${esc(d.id)}"></span></div>
-      <p class="meta">${clock("phase", d.id)} · frei in ${clock("free", d.id)}</p></div>`;
-  }
-  if (s.status === "reserved") return `<p class="meta">Reservierung läuft noch ${clock("res", d.id)}.</p>`;
-  return "";
-}
-
-function queueHtml(s, currentId) {
-  if (!s.queue.length) return "";
-  return `<h3 class="group">Warteschlange</h3>
-    <ol class="queue">${s.queue.map((p, i) => `<li${p.id === me.id ? ' class="me-entry"' : ""}>${p.id === me.id ? "<b>Du</b>" : esc(p.name)} · dran in ${clock("eta", currentId, ` data-pos="${i + 1}"`)}</li>`).join("")}</ol>`;
-}
-
-function simHtml(d, s) {
-  const sim = (s.status === "occupied" && isSim(s.occupiedBy)) ? `${esc(s.occupiedBy.name)} ist fertig`
-    : (s.status === "reserved" && isSim(s.reservedFor)) ? `${esc(s.reservedFor.name)} startet` : "";
-  return sim ? `<p class="simctl">Simulation: ${btn("sim", d.id, sim)}</p>` : "";
 }
 
 function baseUrl() {
@@ -342,7 +399,7 @@ function renderQr() {
       return `<li class="qr-card"><img alt="QR-Code für ${esc(label(d))}" src="${qrDataUrl(url)}" width="160" height="160">
         <b>${esc(label(d))}</b><a data-nav href="?geraet=${encodeURIComponent(d.id)}">?geraet=${esc(d.id)}</a></li>`;
     }).join("")}</ul>
-    <p class="hint">Hinweis: In der StackBlitz-Vorschau zeigt der Code auf eine Vorschau-Adresse, die nur in dieser Sitzung gilt. Für echte Aufkleber braucht es eine feste Adresse (Feld <code>publicBaseUrl</code> in devices.json).</p>`;
+    <p class="hint">Die Codes zeigen auf die feste Adresse aus <code>publicBaseUrl</code> in devices.json und können ausgedruckt werden.</p>`;
   document.title = "Geräteblick – QR-Codes";
 }
 
@@ -355,10 +412,17 @@ function qrDataUrl(text) {
 }
 
 // ---------- Uhr: jede Sekunde Zeit fortschreiben und Anzeigen aktualisieren ----------
-let lastFull = Date.now(), lastAsk = false;
+let clockQueued = false, lastFull = Date.now(), lastAsk = false;
+function fillClocksSoon() {
+  lastFull = Date.now();
+  if (clockQueued) return;
+  clockQueued = true;
+  queueMicrotask(() => { clockQueued = false; updateClocksOnly(); });
+}
+
 function updateClocks() {
   if (!store) return;
-  store.tick(); // ändert sich etwas (Sim-Gast hakt ab, Reservierung läuft ab), wird neu gezeichnet
+  store.tick(); // ändert sich etwas (Bot hakt ab, Reservierung läuft ab), wird über subscribe neu gezeichnet
   const st = store.getState(), w = whereIs(st, me.id);
   // Sitzung abgelaufen: nur wenn man nirgends angemeldet ist (Wartende und Trainierende räumen sich selbst auf).
   if (isIdle(me, idleMs) && !w.training && !w.reserved && !w.queued) {
@@ -368,23 +432,24 @@ function updateClocks() {
     alertText = `Deine Sitzung als ${old} ist nach ${data.rules.idleMinutes} Minuten ohne Aktivität abgelaufen. Du bist jetzt ${me.name}.`;
     return render();
   }
-  // "Bist du noch da?" erscheint/verschwindet, Alternativen ändern sich mit der Zeit: neu zeichnen.
+  // "Bist du noch da?" erscheint/verschwindet, Wartezeiten und Alternativen ändern sich: regelmäßig neu zeichnen.
   const ask = !!(w.training && presence(st.devices[w.training], data.rules, Date.now())?.state === "ask");
   const focused = document.activeElement && document.activeElement.matches("select");
   if (ask !== lastAsk || (!focused && Date.now() - lastFull > 15_000)) { lastAsk = ask; return render(); }
   updateClocksOnly();
 }
+
 function updateClocksOnly() {
   if (!store) return;
   const st = store.getState(), now = Date.now(), r = data.rules;
   document.querySelectorAll("[data-clock]").forEach((el) => {
-    const d = st.devices[el.dataset.device];
+    const kind = el.dataset.clock, ref = el.dataset.ref;
+    if (kind === "eta") { el.textContent = approx(etaMs(st, ref, Number(el.dataset.pos), r, now)); return; }
+    if (kind === "join") { el.textContent = approx(joinWaitMs(st, ref, r, now)); return; }
+    const d = st.devices[ref];
     if (!d) return;
-    const kind = el.dataset.clock;
     if (kind === "free") el.textContent = approx(msUntilFree(d, r, now));
-    else if (kind === "eta") el.textContent = approx(etaMs(d, Number(el.dataset.pos), r, now));
-    else if (kind === "res") el.textContent = mmss(reservationMsLeft(d, r, now));
-    else if (kind === "join") el.textContent = approx(joinWaitMs(d, r, now));
+    else if (kind === "res") el.textContent = mmss(reservationMsLeft(d, now));
     else if (kind === "pres") el.textContent = mmss(presence(d, r, now)?.msLeft ?? 0);
     else if (kind === "phase" || kind === "bar") {
       const ph = phase(d, r, now);
@@ -406,10 +471,10 @@ async function load() {
     const r = await fetch(DATA_URL, { cache: "no-store" });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const json = await r.json();
-    if (!Array.isArray(json.devices) || !json.devices.length) throw new Error("Datensatz unvollständig");
+    if (!Array.isArray(json.devices) || !json.devices.length || !json.rules || !json.map) throw new Error("Datensatz unvollständig");
     data = json;
     idleMs = (data.rules.idleMinutes || 20) * 60_000;
-    store = createLocalStore(data.devices, data.rules);
+    store = createLocalStore(data);
     store.subscribe(() => render());
     render();
   } catch (e) {
