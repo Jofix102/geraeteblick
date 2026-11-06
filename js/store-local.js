@@ -7,11 +7,14 @@
 //   getState()            -> { devices: { [id]: Gerätezustand } }
 //   subscribe(listener)   -> Abmeldefunktion; listener(state) bei jeder Änderung
 //   reset()               -> Ausgangszustand aus der JSON-Datei wiederherstellen
-//   (Schritt 2 ergänzt join/leave)
-const STATE_KEY = "geraeteblick.state.v3";
+//   join / leave / start / finish / simulateStep -> { ok, code?, text? }
+//   Die Regeln selbst stehen in queue-logic.js (ohne Browser-Abhängigkeit, auch auf einem Server nutzbar).
+import * as logic from "./queue-logic.js";
+
+const STATE_KEY = "geraeteblick.state.v3.2";
 const CHANNEL = "geraeteblick";
 
-export function createLocalStore(devices) {
+export function createLocalStore(devices, rules) {
   const listeners = new Set();
   const channel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL) : null;
 
@@ -35,6 +38,14 @@ export function createLocalStore(devices) {
     notify(state);
   }
 
+  // Aktion auf frischem Zustand ausführen; nur bei Erfolg speichern und an alle Tabs verteilen.
+  function act(fn) {
+    const state = read();
+    const result = fn(state);
+    if (result.ok) write(state);
+    return result;
+  }
+
   function notify(state) { listeners.forEach((fn) => fn(state)); }
 
   if (channel) channel.onmessage = () => notify(read());
@@ -45,7 +56,10 @@ export function createLocalStore(devices) {
     getState: read,
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     reset() { write(initialState()); },
-    // Hilfsfunktion für die folgenden Schritte: Zustand gezielt ändern und verteilen.
-    update(mutator) { const state = read(); mutator(state); write(state); return state; }
+    join: (deviceId, me, opts) => act((st) => logic.join(st, deviceId, me, rules, opts)),
+    leave: (deviceId, meId) => act((st) => logic.leave(st, deviceId, meId)),
+    start: (deviceId, me, opts) => act((st) => logic.start(st, deviceId, me, opts)),
+    finish: (deviceId, meId) => act((st) => logic.finish(st, deviceId, meId)),
+    simulateStep: (deviceId) => act((st) => logic.simulateStep(st, deviceId))
   };
 }

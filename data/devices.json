@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "0.3",
+    "version": "0.3.2",
     "studioName": "City Fit (fiktiv)",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
@@ -26,11 +26,18 @@
       "icon": "assets/latzug.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 1",
+        "occupiedBy": {
+          "id": "sim-1",
+          "name": "Sim-Gast 1"
+        },
+        "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 1,
         "queue": [
-          "Sim-Gast 2"
+          {
+            "id": "sim-2",
+            "name": "Sim-Gast 2"
+          }
         ]
       }
     },
@@ -45,6 +52,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
@@ -60,7 +68,11 @@
       "icon": "assets/ruderzug.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 3",
+        "occupiedBy": {
+          "id": "sim-3",
+          "name": "Sim-Gast 3"
+        },
+        "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 2,
         "queue": []
@@ -76,7 +88,11 @@
       "icon": "assets/brustpresse.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 4",
+        "occupiedBy": {
+          "id": "sim-4",
+          "name": "Sim-Gast 4"
+        },
+        "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 0,
         "queue": []
@@ -93,6 +109,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
@@ -108,11 +125,18 @@
       "icon": "assets/butterfly.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 5",
+        "occupiedBy": {
+          "id": "sim-5",
+          "name": "Sim-Gast 5"
+        },
+        "reservedFor": null,
         "plannedSets": 4,
         "completedSets": 3,
         "queue": [
-          "Sim-Gast 6"
+          {
+            "id": "sim-6",
+            "name": "Sim-Gast 6"
+          }
         ]
       }
     },
@@ -126,7 +150,11 @@
       "icon": "assets/beinpresse.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 7",
+        "occupiedBy": {
+          "id": "sim-7",
+          "name": "Sim-Gast 7"
+        },
+        "reservedFor": null,
         "plannedSets": 4,
         "completedSets": 1,
         "queue": []
@@ -143,6 +171,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
@@ -158,7 +187,11 @@
       "icon": "assets/legextension.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 8",
+        "occupiedBy": {
+          "id": "sim-8",
+          "name": "Sim-Gast 8"
+        },
+        "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 2,
         "queue": []
@@ -175,6 +208,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
@@ -191,6 +225,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
@@ -206,7 +241,11 @@
       "icon": "assets/kabelturm.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 9",
+        "occupiedBy": {
+          "id": "sim-9",
+          "name": "Sim-Gast 9"
+        },
+        "reservedFor": null,
         "plannedSets": 3,
         "completedSets": 1,
         "queue": []
@@ -223,6 +262,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
@@ -239,6 +279,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
@@ -254,11 +295,18 @@
       "icon": "assets/kabelturm.svg",
       "initialState": {
         "status": "occupied",
-        "occupiedBy": "Sim-Gast 10",
+        "occupiedBy": {
+          "id": "sim-10",
+          "name": "Sim-Gast 10"
+        },
+        "reservedFor": null,
         "plannedSets": 4,
         "completedSets": 2,
         "queue": [
-          "Sim-Gast 11"
+          {
+            "id": "sim-11",
+            "name": "Sim-Gast 11"
+          }
         ]
       }
     },
@@ -273,6 +321,7 @@
       "initialState": {
         "status": "free",
         "occupiedBy": null,
+        "reservedFor": null,
         "plannedSets": 0,
         "completedSets": 0,
         "queue": []
