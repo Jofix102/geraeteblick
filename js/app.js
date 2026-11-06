@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.2";
-import { createLocalStore } from "./store-local.js?v=0.4.2";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.3";
+import { createLocalStore } from "./store-local.js?v=0.4.3";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.4.2";
+} from "./queue-logic.js?v=0.4.3";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -367,7 +367,7 @@ function renderDevice(id) {
     <section class="actions" aria-label="Was möchtest du tun?">${deviceActionsHtml(st, w, d)}</section>
     ${alternativesHtml(st, w, d.type)}
     ${queueHtml(st, d.type)}
-    <details class="mapbox"><summary>Wo steht das Gerät?</summary>${mapSvg(d.id)}</details>
+    <section class="mapbox"><h3 class="group">Wo steht das Gerät?</h3>${mapSvg(d.id)}</section>
     ${simHtml(d, s)}`;
   document.title = `Geräteblick – ${label(d)}`;
 }

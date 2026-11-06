@@ -10,7 +10,7 @@
 //   join(type) / leave(type) / reserve(type) / start / completeSet / finish / confirmPresence / simulateStep -> { ok, code?, text? }
 //   tick()                -> Lauf der Zeit (Bots, Ablauf von Reservierungen); auf dem Server macht das der Server
 // Die Regeln selbst stehen in queue-logic.js (ohne Browser-Abhängigkeit, auch auf einem Server nutzbar).
-import * as logic from "./queue-logic.js?v=0.4.2";
+import * as logic from "./queue-logic.js?v=0.4.3";
 
 const STATE_KEY = "geraeteblick.state.v4";
 const CHANNEL = "geraeteblick";
