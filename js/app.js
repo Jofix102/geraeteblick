@@ -1,14 +1,21 @@
-import { getIdentity, touch } from "./identity.js?v=0.3.3";
-import { createLocalStore } from "./store-local.js?v=0.3.3";
-import { whereIs, isCompletelyFree, trainingFarEnough, isSim, phase, etaMs, msUntilFree, reservationMsLeft, trainingMs } from "./queue-logic.js?v=0.3.3";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.3.4";
+import { createLocalStore } from "./store-local.js?v=0.3.4";
+import { whereIs, isCompletelyFree, trainingFarEnough, isSim, phase, etaMs, msUntilFree, reservationMsLeft, trainingMs, joinWaitMs, presence } from "./queue-logic.js?v=0.3.4";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-let data = null, store = null, flash = null, chosenSets = null, lastReserved = null, alertText = "";
-const me = getIdentity();
+let data = null, store = null, flash = null, chosenSets = null, lastReserved = null, lastTraining = null, alertText = "", ownAction = false;
+let me = getIdentity();
+let idleMs = 20 * 60_000; // wird nach dem Laden aus rules.idleMinutes übernommen
+
+// Aktivität = echte Bedienung (nicht das bloße Neuzeichnen durch andere Tabs).
+let lastTouch = 0;
+["click", "keydown", "change", "touchstart"].forEach((t) => document.addEventListener(t, () => {
+  if (Date.now() - lastTouch > 5000) { lastTouch = Date.now(); touch(me); }
+}, { passive: true }));
 
 const label = (d) => d.position ? `${d.name} ${d.position}` : d.name;
 
@@ -38,6 +45,7 @@ function statusLine(s) {
 // Nach dem Zeichnen sofort Zeiten eintragen (ohne erneut tick auszulösen, sonst Endlosschleife).
 let clockQueued = false;
 function fillClocksSoon() {
+  lastFull = Date.now();
   if (clockQueued) return;
   clockQueued = true;
   queueMicrotask(() => { clockQueued = false; updateClocksOnly(); });
@@ -48,12 +56,18 @@ function renderBar() {
   if (!store) { bar.hidden = true; return; }
   const w = whereIs(store.getState(), me.id);
   // Reservierung verloren, ohne zu starten: Hinweis zeigen.
-  if (lastReserved && !w.reserved && w.training !== lastReserved)
+  if (lastReserved && !w.reserved && w.training !== lastReserved && !ownAction)
     alertText = `Deine Reservierung ${an(lastReserved)} ${label(devById(lastReserved))} ist abgelaufen. Der Nächste ist dran.`;
+  if (lastTraining && !w.training && !ownAction)
+    alertText = `Du wurdest ${an(lastTraining)} ${label(devById(lastTraining))} abgemeldet, weil ${data.rules.removeWithoutAnswerMinute} Minuten keine Rückmeldung kam.`;
   lastReserved = w.reserved;
+  lastTraining = w.training;
+  ownAction = false;
   const parts = alertText ? [`<p class="bar-line">${esc(alertText)} <button type="button" class="linklike" data-dismiss>OK</button></p>`] : [];
   if (w.reserved) parts.push(`<p class="bar-line turn"><b>Du bist dran ${an(w.reserved)} ${esc(label(devById(w.reserved)))}!</b> <a class="button primary" data-nav href="?geraet=${w.reserved}">Jetzt hin</a></p>`);
   if (w.reserved) parts[parts.length - 1] = parts[parts.length - 1].replace("</b> <a", `</b> ${clock("res", w.reserved)} <a`);
+  if (w.training && presence(store.getState().devices[w.training], data.rules, Date.now())?.state === "ask")
+    parts.push(`<p class="bar-line turn"><b>Bist du noch da?</b> Sonst wirst du in ${clock("pres", w.training)} abgemeldet. ${btn("here", w.training, "Ja, bin noch da", true)}</p>`);
   if (w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?geraet=${w.training}">Öffnen</a></p>`);
   if (w.queued) parts.push(`<p class="bar-line">Du bist <b>Nr. ${w.queued.position}</b> ${an(w.queued.device)} <b>${esc(label(devById(w.queued.device)))}</b>, dran in ${clock("eta", w.queued.device, ` data-pos="${w.queued.position}"`)} <a data-nav href="?geraet=${w.queued.device}">Ansehen</a> <button type="button" class="linklike" data-action="leave" data-device="${w.queued.device}">Verlassen</button></p>`);
   bar.innerHTML = parts.join("");
@@ -68,6 +82,7 @@ const ACTIONS = {
   start: (id) => store.start(id, me, { sets: chosenSets }),
   "start-keep": (id) => store.start(id, me, { keepQueue: true, sets: chosenSets }),
   set: (id) => store.completeSet(id, me.id),
+  here: (id) => store.confirmPresence(id, me.id),
   finish: (id) => store.finish(id, me.id),
   sim: (id) => store.simulateStep(id)
 };
@@ -75,20 +90,22 @@ const DONE = {
   join: "Du stehst jetzt in der Warteschlange.", "join-switch": "Gewechselt: Du stehst jetzt hier an.",
   leave: "Du hast die Warteschlange verlassen.", start: "Training gestartet.",
   "start-keep": "Training gestartet. Dein Platz in der Warteschlange bleibt.", finish: "Gerät freigegeben.",
-  sim: "Simulation: Sim-Gast ist weiter.", set: "Satz abgehakt. Jetzt Pause."
+  sim: "Simulation: Sim-Gast ist weiter.", set: "Satz abgehakt. Jetzt Pause.", here: "Danke, du bleibst angemeldet."
 };
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-action]");
+  if (!b || !store) return;
+  ownAction = true;
+  const result = ACTIONS[b.dataset.action](b.dataset.device);
+  flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? "Letzter Satz geschafft. Das Gerät ist frei für den Nächsten." : DONE[b.dataset.action] };
+  if (result.ok && b.dataset.go) return navigate(b.dataset.go);
+  render();
+});
 document.addEventListener("click", (e) => {
   if (e.target.matches("[data-dismiss]")) { alertText = ""; render(); }
 });
 document.addEventListener("change", (e) => {
   if (e.target.matches("select[data-sets]")) chosenSets = Number(e.target.value);
-});
-document.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-action]");
-  if (!b || !store) return;
-  const result = ACTIONS[b.dataset.action](b.dataset.device);
-  flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? "Letzter Satz geschafft. Das Gerät ist frei für den Nächsten." : DONE[b.dataset.action] };
-  render();
 });
 
 // ---------- Routing (Ansicht steckt in der Adresse, damit QR-Links funktionieren) ----------
@@ -105,13 +122,14 @@ document.addEventListener("click", (e) => {
 window.addEventListener("popstate", () => render());
 
 function render() {
-  touch(me);
   renderBar();
   const q = new URLSearchParams(location.search);
-  document.querySelectorAll("[data-tab]").forEach((t) => t.setAttribute("aria-current", String(t.dataset.tab === (q.get("ansicht") === "qr" ? "qr" : "geraete"))));
+  const tab = q.has("geraet") ? "" : q.get("ansicht") === "qr" ? "qr" : q.get("ansicht") === "ich" ? "ich" : "geraete";
+  document.querySelectorAll("[data-tab]").forEach((t) => t.setAttribute("aria-current", String(t.dataset.tab === tab)));
   if (!data) return;
   if (q.has("geraet")) renderDevice(q.get("geraet"));
   else if (q.get("ansicht") === "qr") renderQr();
+  else if (q.get("ansicht") === "ich") renderMine();
   else renderList();
   fillClocksSoon();
 }
@@ -165,6 +183,7 @@ function renderDevice(id) {
     ${twin.length ? `<p class="hint">Im Studio gibt es ${twin.length + 1}× ${esc(d.name)}. Du siehst <b>${esc(label(d))}</b>. Wechseln zu: ${twin.map((t) => `<a data-nav href="?geraet=${encodeURIComponent(t.id)}">${esc(label(t))}</a>`).join(", ")}</p>` : ""}
     ${flashHtml()}
     <section class="actions" aria-label="Was möchtest du tun?">${actionsHtml(d, s)}</section>
+    ${alternativesHtml(d, s)}
     ${queueHtml(s, d.id)}
     ${simHtml(d, s)}`;
   document.title = `Geräteblick – ${label(d)}`;
@@ -176,8 +195,8 @@ function flashHtml() {
   return `<p class="flash ${f.ok ? "ok" : "bad"}" role="status">${esc(f.text)}</p>`;
 }
 
-const btn = (action, id, text, primary = false) =>
-  `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-device="${esc(id)}">${text}</button>`;
+const btn = (action, id, text, primary = false, go = false) =>
+  `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-device="${esc(id)}"${go ? ` data-go="?geraet=${esc(id)}"` : ""}>${text}</button>`;
 const link = (id) => `<a data-nav href="?geraet=${encodeURIComponent(id)}">${esc(label(devById(id)))}</a>`;
 
 // Wichtigste Aktion zuerst (primary), Alternativen darunter.
@@ -212,6 +231,69 @@ function actionsHtml(d, s) {
     return `<p>Du stehst schon ${an(w.queued.device)} ${link(w.queued.device)} an (Nr. ${w.queued.position}). Du kannst nur in einer Warteschlange gleichzeitig stehen.</p>
       ${btn("join-switch", d.id, `Wechseln: hier anstellen (Nr. ${nr})`, true)}`;
   return `<p>Wartezeit für dich: ${clock("eta", d.id, ` data-pos="${nr}"`)}</p>${btn("join", d.id, `Anstellen (du wärst Nr. ${nr})`, true)}`;
+}
+
+// Schneller frei: Zwillingsgerät oder gleiche Muskelgruppe mit kürzerer Wartezeit (mind. 1 Min. Vorteil).
+function alternativesHtml(d, s) {
+  const st = store.getState(), w = whereIs(st, me.id), r = data.rules, now = Date.now();
+  if (s.occupiedBy?.id === me.id || s.reservedFor?.id === me.id) return "";
+  const myPos = s.queue.findIndex((p) => p.id === me.id) + 1;
+  const myWait = myPos ? etaMs(s, myPos, r, now) : joinWaitMs(s, r, now);
+  if (myWait < 60_000) return "";
+  const blocked = w.training && !trainingFarEnough(st.devices[w.training], r);
+  const better = data.devices
+    .filter((x) => x.muscleGroup === d.muscleGroup && x.id !== d.id && x.id !== w.training && x.id !== w.queued?.device)
+    .map((x) => ({ x, s: st.devices[x.id], wait: joinWaitMs(st.devices[x.id], r, now), twin: x.name === d.name }))
+    .filter((c) => c.wait + 60_000 < myWait)
+    .sort((a, b) => (b.twin - a.twin) || (a.wait - b.wait))
+    .slice(0, 3);
+  if (!better.length) return "";
+  const rows = better.map((c) => {
+    const free = isCompletelyFree(c.s);
+    let action = "";
+    if (free && !w.training) action = btn("start", c.x.id, w.queued ? "Wechseln und dort trainieren" : "Dort trainieren", false, true);
+    else if (!free && !blocked) action = btn(w.queued ? "join-switch" : "join", c.x.id, w.queued ? "Wechseln: dort anstellen" : "Dort anstellen", false, true);
+    return `<li><span>${c.twin ? "<b>Gleiches Gerät:</b> " : ""}${link(c.x.id)}: ${free ? "jetzt frei" : `dran in ${clock("join", c.x.id)}`}</span>${action}</li>`;
+  }).join("");
+  return `<section class="alt" aria-label="Schneller frei"><h3 class="group">Schneller frei (${esc(d.muscleGroup)}) statt ${clock(myPos ? "eta" : "join", d.id, myPos ? ` data-pos="${myPos}"` : "")} hier</h3><ul>${rows}</ul></section>`;
+}
+
+// Tab "Mein Training": aktuelles Gerät, Warteschlange, nächstes Gerät.
+function renderMine() {
+  const st = store.getState(), w = whereIs(st, me.id), r = data.rules, now = Date.now();
+  const cur = w.training || w.reserved;
+  let html = `<h2>Mein Training</h2>${flashHtml()}<h3 class="group">Aktuelles Gerät</h3>`;
+  if (cur) {
+    const d = devById(cur), s = st.devices[cur];
+    html += `<article class="device"><img src="${esc(d.icon)}" alt="" class="device-img"><div>
+      <h2>${link(cur)}</h2>${progressHtml(d, s)}<section class="actions">${actionsHtml(d, s)}</section></div></article>`;
+  } else html += `<p class="meta">Du trainierst gerade nicht. Wähle unten ein Gerät oder scanne den QR-Code am Gerät.</p>`;
+
+  html += `<h3 class="group">Warteschlange</h3>`;
+  if (w.queued) {
+    const d = devById(w.queued.device), s = st.devices[w.queued.device];
+    html += `<div class="card"><p>Du bist <b>Nr. ${w.queued.position}</b> ${an(d.id)} ${link(d.id)}, dran in ${clock("eta", d.id, ` data-pos="${w.queued.position}"`)}.</p>
+      ${btn("leave", d.id, "Warteschlange verlassen")}${alternativesHtml(d, s)}</div>`;
+  } else html += `<p class="meta">Du stehst nirgends an.</p>`;
+
+  const train = w.training ? st.devices[w.training] : null;
+  const blocked = train && !trainingFarEnough(train, r);
+  html += `<h3 class="group">Nächstes Gerät</h3>`;
+  if (blocked) html += `<p class="meta">Anstellen geht ab mehr als ${r.nextQueueAfterPercentSets} % deiner Sätze, also nach Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1} von ${train.plannedSets}.</p>`;
+  const rows = data.devices.filter((x) => x.id !== cur)
+    .map((x) => ({ x, s: st.devices[x.id], wait: joinWaitMs(st.devices[x.id], r, now) }))
+    .sort((a, b) => a.wait - b.wait)
+    .map(({ x, s }) => {
+      const free = isCompletelyFree(s), queuedHere = w.queued?.device === x.id;
+      let action = "";
+      if (queuedHere) action = `<b>du: Nr. ${w.queued.position}</b>`;
+      else if (free && !w.training) action = btn("start", x.id, w.queued ? "Wechseln, starten" : "Starten", false, true);
+      else if (!free && !blocked) action = btn(w.queued ? "join-switch" : "join", x.id, w.queued ? "Wechseln" : "Anstellen");
+      return `<li class="next-row"><span>${link(x.id)}<span class="meta"> · ${esc(x.muscleGroup)} · ${free ? "frei" : `dran in ${clock("join", x.id)}`}</span></span>${action}</li>`;
+    }).join("");
+  html += `<ul class="next">${rows}</ul>`;
+  $("#view").innerHTML = html;
+  document.title = "Geräteblick – Mein Training";
 }
 
 function setsPicker() {
@@ -273,9 +355,23 @@ function qrDataUrl(text) {
 }
 
 // ---------- Uhr: jede Sekunde Zeit fortschreiben und Anzeigen aktualisieren ----------
+let lastFull = Date.now(), lastAsk = false;
 function updateClocks() {
   if (!store) return;
   store.tick(); // ändert sich etwas (Sim-Gast hakt ab, Reservierung läuft ab), wird neu gezeichnet
+  const st = store.getState(), w = whereIs(st, me.id);
+  // Sitzung abgelaufen: nur wenn man nirgends angemeldet ist (Wartende und Trainierende räumen sich selbst auf).
+  if (isIdle(me, idleMs) && !w.training && !w.reserved && !w.queued) {
+    const old = me.name;
+    me = renewIdentity();
+    $("#me").textContent = me.name;
+    alertText = `Deine Sitzung als ${old} ist nach ${data.rules.idleMinutes} Minuten ohne Aktivität abgelaufen. Du bist jetzt ${me.name}.`;
+    return render();
+  }
+  // "Bist du noch da?" erscheint/verschwindet, Alternativen ändern sich mit der Zeit: neu zeichnen.
+  const ask = !!(w.training && presence(st.devices[w.training], data.rules, Date.now())?.state === "ask");
+  const focused = document.activeElement && document.activeElement.matches("select");
+  if (ask !== lastAsk || (!focused && Date.now() - lastFull > 15_000)) { lastAsk = ask; return render(); }
   updateClocksOnly();
 }
 function updateClocksOnly() {
@@ -288,6 +384,8 @@ function updateClocksOnly() {
     if (kind === "free") el.textContent = approx(msUntilFree(d, r, now));
     else if (kind === "eta") el.textContent = approx(etaMs(d, Number(el.dataset.pos), r, now));
     else if (kind === "res") el.textContent = mmss(reservationMsLeft(d, r, now));
+    else if (kind === "join") el.textContent = approx(joinWaitMs(d, r, now));
+    else if (kind === "pres") el.textContent = mmss(presence(d, r, now)?.msLeft ?? 0);
     else if (kind === "phase" || kind === "bar") {
       const ph = phase(d, r, now);
       if (!ph) { el.textContent = ""; return; }
@@ -310,6 +408,7 @@ async function load() {
     const json = await r.json();
     if (!Array.isArray(json.devices) || !json.devices.length) throw new Error("Datensatz unvollständig");
     data = json;
+    idleMs = (data.rules.idleMinutes || 20) * 60_000;
     store = createLocalStore(data.devices, data.rules);
     store.subscribe(() => render());
     render();

@@ -7,12 +7,12 @@
 //   getState()            -> { devices: { [id]: Gerätezustand } }
 //   subscribe(listener)   -> Abmeldefunktion; listener(state) bei jeder Änderung
 //   reset()               -> Ausgangszustand aus der JSON-Datei wiederherstellen
-//   join / leave / start / completeSet / finish / simulateStep -> { ok, code?, text? }
+//   join / leave / start / completeSet / finish / confirmPresence / removeGuest / simulateStep -> { ok, code?, text? }
 //   tick()                -> Lauf der Zeit (Sim-Gäste, Ablauf von Reservierungen); auf dem Server macht das der Server
 //   Die Regeln selbst stehen in queue-logic.js (ohne Browser-Abhängigkeit, auch auf einem Server nutzbar).
-import * as logic from "./queue-logic.js?v=0.3.3";
+import * as logic from "./queue-logic.js?v=0.3.4";
 
-const STATE_KEY = "geraeteblick.state.v3.3";
+const STATE_KEY = "geraeteblick.state.v3.4";
 const CHANNEL = "geraeteblick";
 
 export function createLocalStore(devices, rules) {
@@ -64,6 +64,8 @@ export function createLocalStore(devices, rules) {
     start: (deviceId, me, opts) => act((st) => logic.start(st, deviceId, me, rules, Date.now(), opts)),
     completeSet: (deviceId, meId) => act((st) => logic.completeSet(st, deviceId, meId, Date.now())),
     finish: (deviceId, meId) => act((st) => logic.finish(st, deviceId, meId, Date.now())),
+    confirmPresence: (deviceId, meId) => act((st) => logic.confirmPresence(st, deviceId, meId, Date.now())),
+    removeGuest: (guestId) => act((st) => logic.removeGuest(st, guestId, Date.now())),
     tick: () => act((st) => ({ ok: logic.tick(st, rules, Date.now()) })),
     simulateStep: (deviceId) => act((st) => logic.simulateStep(st, deviceId, rules, Date.now()))
   };

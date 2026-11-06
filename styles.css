@@ -61,3 +61,8 @@ footer{color:var(--soft);font-size:.85rem}
 .bar span{display:block;height:100%;background:var(--teal);width:0;transition:width 1s linear}
 .clockbig{font-size:1.3rem;font-weight:700;color:var(--teal)}
 .sets select{font:inherit;min-height:44px;margin-left:8px;border-radius:10px;border:1px solid var(--line);padding:4px 8px}
+.alt{background:var(--teal-soft);border-radius:12px;padding:8px 12px;margin:12px 0}
+.alt ul,.next{list-style:none;padding:0;margin:4px 0;display:grid;gap:6px}
+.alt li,.next-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.next-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 10px;min-height:52px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}

@@ -67,6 +67,39 @@ export function etaMs(d, position, rules, now) {
   return msUntilFree(d, rules, now) + (position - 1) * trainingMs(rules.defaultSets, rules);
 }
 
+/** Wartezeit, wenn man sich jetzt neu anstellt (0 bei völlig freiem Gerät). */
+export function joinWaitMs(d, rules, now) {
+  return isCompletelyFree(d) ? 0 : etaMs(d, d.queue.length + 1, rules, now);
+}
+
+/**
+ * Anwesenheit am Gerät (echte Gäste): letzte Rückmeldung = Start, abgehakter Satz oder "Ich bin noch da".
+ * Ab Minute 5 ohne Rückmeldung: "ask", ab Minute 6: "remove".
+ */
+export function presence(d, rules, now) {
+  if (d.status !== "occupied" || isSim(d.occupiedBy)) return null;
+  const idle = now - Math.max(d.startedAt || 0, d.lastSetAt || 0, d.confirmedAt || 0);
+  if (idle >= rules.removeWithoutAnswerMinute * MIN) return { state: "remove", msLeft: 0 };
+  if (idle >= rules.stillThereCheckMinute * MIN) return { state: "ask", msLeft: rules.removeWithoutAnswerMinute * MIN - idle };
+  return null;
+}
+
+export function confirmPresence(state, deviceId, meId, now) {
+  const d = state.devices[deviceId];
+  if (!d || d.occupiedBy?.id !== meId) return fail("notMine", "Das ist nicht dein Gerät.");
+  d.confirmedAt = now;
+  return OK;
+}
+
+/** Gast komplett entfernen (Sitzung abgelaufen): aus Schlangen, Reservierungen und Geräten. */
+export function removeGuest(state, guestId, now) {
+  for (const d of Object.values(state.devices)) {
+    d.queue = d.queue.filter((p) => p.id !== guestId);
+    if (d.occupiedBy?.id === guestId || d.reservedFor?.id === guestId) handOver(d, now);
+  }
+  return OK;
+}
+
 export function reservationMsLeft(d, rules, now) {
   return d.status === "reserved" ? Math.max(0, d.reservedAt + rules.reservationMinutes * MIN - now) : 0;
 }
@@ -77,12 +110,12 @@ function removeFromQueue(d, meId) {
 
 function occupy(d, person, sets, now) {
   Object.assign(d, { status: "occupied", occupiedBy: { id: person.id, name: person.name }, reservedFor: null, reservedAt: null,
-    plannedSets: sets, completedSets: 0, startedAt: now, lastSetAt: null });
+    plannedSets: sets, completedSets: 0, startedAt: now, lastSetAt: null, confirmedAt: null });
 }
 
 /** Gerät weitergeben: Nr. 1 der Schlange bekommt eine Reservierung, sonst frei. */
 function handOver(d, now) {
-  Object.assign(d, { occupiedBy: null, plannedSets: 0, completedSets: 0, startedAt: null, lastSetAt: null });
+  Object.assign(d, { occupiedBy: null, plannedSets: 0, completedSets: 0, startedAt: null, lastSetAt: null, confirmedAt: null });
   const next = d.queue.shift();
   if (next) Object.assign(d, { status: "reserved", reservedFor: next, reservedAt: now });
   else Object.assign(d, { status: "free", reservedFor: null, reservedAt: null });
@@ -163,6 +196,7 @@ export function finish(state, deviceId, meId, now) {
  * - Sim-Gäste haken ihre Sätze nach Plan ab und geben das Gerät danach weiter.
  * - Sim-Gäste nehmen eine Reservierung nach kurzer Zeit an.
  * - Echte Gäste verlieren die Reservierung nach Ablauf (1 Minute); dann ist der Nächste dran.
+ * - Echte Gäste ohne Rückmeldung am Gerät werden nach 6 Minuten abgemeldet.
  */
 export function tick(state, rules, now) {
   let changed = false;
@@ -178,6 +212,7 @@ export function tick(state, rules, now) {
         changed = true;
       }
     }
+    if (presence(d, rules, now)?.state === "remove") { handOver(d, now); changed = true; }
     if (d.status === "reserved") {
       const age = now - d.reservedAt;
       if (isSim(d.reservedFor) && age >= rules.simTakesReservationSeconds * 1000) { occupy(d, d.reservedFor, rules.defaultSets, now); changed = true; }
