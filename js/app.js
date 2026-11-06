@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.3";
-import { createLocalStore } from "./store-local.js?v=0.4.3";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.4";
+import { createLocalStore } from "./store-local.js?v=0.4.4";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.4.3";
+} from "./queue-logic.js?v=0.4.4";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -305,8 +305,8 @@ function deviceActionsHtml(st, w, d) {
   if (isCompletelyFree(st, d.id)) {
     if (w.training) return `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Beende dort zuerst dein Training.</p>`;
     if (w.queued) return `<p>Das Gerät ist frei. Du stehst ${anType(w.queued.type)} ${esc(typeName(w.queued.type))} an (Nr. ${w.queued.position}, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}).</p>
-      ${btn("start-keep", d.id, "Hier überbrücken, Platz behalten", true)}${btn("start", d.id, "Wechseln: Platz aufgeben und hier trainieren")}`;
-    return `${btn("start", d.id, "Training starten", true)}`;
+      ${btn("reserve-keep", d.id, "Hier überbrücken, Platz behalten", true)}${btn("reserve", d.id, "Wechseln: Platz aufgeben und dieses Gerät nehmen")}`;
+    return `${btn("reserve", d.id, "Dieses Gerät nehmen", true)}`;
   }
   const action = typeAction(st, w, d.type);
   if (action.startsWith("<b>")) return `<p>${action}</p>`;

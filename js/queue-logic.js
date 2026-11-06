@@ -163,8 +163,9 @@ export function leave(state, type, meId) {
  * Freies Gerät aus der Übersicht wählen: Es wird 1 Minute für mich reserviert, damit ich hingehen kann.
  * Dort bestätige ich die Ankunft (start). keepQueue: Platz in einer anderen Schlange behalten (überbrücken).
  */
-export function reserve(state, type, me, rules, now, { keepQueue = false, sets } = {}) {
-  const id = freeDeviceOfType(state, type);
+export function reserve(state, ref, me, rules, now, { keepQueue = false, sets } = {}) {
+  // ref: Gerätetyp (erstes freies Gerät) oder ein bestimmtes Gerät (Geräteseite)
+  const id = state.devices[ref] ? (isCompletelyFree(state, ref) ? ref : null) : freeDeviceOfType(state, ref);
   if (!id) return fail("busy", "Gerade ist kein Gerät dieses Typs frei.");
   const n = checkSets(sets, rules);
   if (!n) return fail("sets", `Bitte 1 bis ${rules.maxSets} Sätze wählen.`);
