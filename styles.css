@@ -209,3 +209,83 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .card .type-head h2{margin:0}
 .card .type-head img{width:56px;height:56px}
 .trainer-info{text-align:center}.trainer .meta{text-align:center;max-width:360px}
+
+/* ---------- v0.6: Bilder statt Text ---------- */
+/* Piktogramme stehen immer auf dunklem Grund, damit Gelb/Grau in beiden Modi gleich wirken */
+.pic{background:#1f2123;border-radius:14px;display:block;flex:none;object-fit:contain}
+.tiles{list-style:none;padding:0;margin:12px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:640px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:960px){.tiles{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);text-decoration:none;min-height:100%;transition:border-color .15s,transform .1s}
+.tile:hover{border-color:var(--accent)}
+.tile:active{transform:scale(.98)}
+.tile .pic{width:100%;height:auto;aspect-ratio:4/3;padding:6px}
+.tile b{font-size:1.05rem}
+.tile .gauge{width:100%;margin-top:auto}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.82rem;font-weight:700;background:var(--surface2);color:var(--soft)}
+.badge.free{color:var(--ok)}
+.badge.wait{color:var(--ready)}
+.type-tile{display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:center;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.type-tile .pic{width:76px;height:76px;padding:4px}
+.type-tile .tt-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.type-tile .tt-main a{text-decoration:none}
+.type-tile .tt-main b{font-size:1.05rem}
+.type-tile .type-action{grid-column:1/-1;justify-content:stretch}
+.type-tile .type-action:empty{display:none}
+.type-tile .type-action .button{flex:1}
+@media(min-width:640px){.type-tile{grid-template-columns:76px 1fr auto}.type-tile .type-action{grid-column:auto}}
+.types{gap:10px}
+.device{grid-template-columns:120px 1fr}
+.device-img.pic{width:120px;height:120px;padding:6px}
+@media(max-width:400px){.device{grid-template-columns:96px 1fr}.device-img.pic{width:96px;height:96px}}
+.device h2{margin:0}
+.hero{display:flex;flex-direction:column;gap:2px;text-decoration:none}
+a.hero{border-color:var(--accent)}
+.hero-title{font-size:1.15rem}
+.empty{padding:18px;text-align:center;border:1px dashed var(--line);border-radius:var(--radius);margin:10px 0}
+.card.now{border-color:var(--accent);margin:10px 0}
+.card .type-head .pic{width:64px;height:64px;padding:3px}
+.card.queued .big{font-size:1.8rem;font-weight:800;line-height:1.1}
+.card.queued .big small{font-size:.95rem;font-weight:600;color:var(--soft);margin-left:6px}
+.card.queued .linklike{margin-top:8px;color:var(--soft)}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+.section-head .group{margin:0}
+.section-head .linklike{display:inline-flex;align-items:center;gap:4px;min-height:40px;text-decoration:none;color:var(--accent)}
+@media (prefers-color-scheme:light){.section-head .linklike{color:var(--ink)}}
+.plan-empty{width:100%;min-height:72px;border-style:dashed;color:var(--soft);margin:8px 0}
+.plan{list-style:none;padding:0;margin:8px 0;display:grid;gap:8px}
+.plan-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.plan-row .pic{width:52px;height:52px;padding:2px}
+.plan-row .pr-main{flex:1;min-width:120px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.plan-row .badge{margin-top:2px}
+.plan-row.next{border-color:var(--accent)}
+.plan-row.done{opacity:.55}
+.plan-row.done b{text-decoration:line-through}
+.plan-row>.button{min-height:44px;padding:6px 14px}
+@media(max-width:480px){.plan-row.next>.button{width:100%}}
+.plan.edit .plan-row{flex-wrap:nowrap}
+.stepper{display:inline-flex;align-items:center;gap:6px}
+.stepper b{min-width:1.4em;text-align:center;font-size:1.1rem}
+.stepper button,.iconbtn{min-height:44px;width:44px;padding:0;border-radius:12px}
+.iconbtn-space{display:inline-block;width:44px;flex:none}
+.pickgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 16px}
+@media(max-width:420px){.pickgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pick{flex-direction:column;gap:4px;padding:6px;min-height:0;font-size:.78rem;line-height:1.2;text-align:center;border-radius:14px}
+.pick .pic{width:100%;height:auto;aspect-ratio:1}
+#plan{max-height:90vh;overflow:auto}
+/* Tab-Leiste ruhiger: aktiver Tab gelbe Schrift auf leichtem Grund statt voller Fläche */
+.tabbar a[aria-current=true]{background:rgba(255,212,0,.14);color:var(--accent)}
+.tabbar a[aria-current=true] svg{stroke:var(--accent)}
+@media (prefers-color-scheme:light){.tabbar a[aria-current=true]{background:var(--accent);color:var(--on-accent)}.tabbar a[aria-current=true] svg{stroke:var(--on-accent)}}
+.tabbar svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tabbar span{font-size:.8rem}
+/* Plan-Editor: im Bearbeiten keine Bilder in der Liste (die Auswahl darunter zeigt sie), damit alles auf 360 px passt */
+#plan{overflow-x:hidden}
+@media(max-width:480px){.sheet{padding:14px;width:calc(100% - 16px)}}
+.plan.edit .plan-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:6px;padding:6px 6px 6px 12px}
+.plan.edit .pic{display:none}
+.plan.edit .pr-main{min-width:0}
+.plan.edit .pr-main b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.plan.edit .stepper button,.plan.edit .iconbtn{width:40px;min-height:40px}
+.plan.edit .iconbtn-space{width:40px}

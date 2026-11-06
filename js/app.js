@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.5.1";
-import { createLocalStore } from "./store-local.js?v=0.5.1";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.6.0";
+import { createLocalStore } from "./store-local.js?v=0.6.0";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.5.1";
+} from "./queue-logic.js?v=0.6.0";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -14,6 +14,15 @@ let data = null, store = null, flash = null, chosenSets = null, alertText = "", 
 let lastReserved = null, lastTraining = null, turnShownFor = null;
 let me = getIdentity();
 let idleMs = 20 * 60_000; // wird nach dem Laden aus rules.idleMinutes übernommen
+
+// ---------- Trainingsplan: pro Tab (= Gast) im sessionStorage ----------
+const PLAN_KEY = "geraeteblick.plan";
+let plan = (() => { try { return JSON.parse(sessionStorage.getItem(PLAN_KEY)) || []; } catch { return []; } })();
+const savePlan = () => { try { sessionStorage.setItem(PLAN_KEY, JSON.stringify(plan)); } catch { /* privater Modus */ } };
+function markPlanDone(type) {
+  const i = plan.findIndex((p) => !p.done && p.type === type);
+  if (i >= 0) { plan[i].done = true; savePlan(); }
+}
 
 // Aktivität = echte Bedienung (nicht das bloße Neuzeichnen durch andere Tabs).
 let lastTouch = 0;
@@ -28,7 +37,13 @@ const ICONS = {
   dot: "M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z",
   clock: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 10.4 3.5 2.1-.8 1.3L11 13V6h2z",
   back: "M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z",
-  chev: "M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6z"
+  chev: "M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6z",
+  user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z",
+  edit: "M3 17.2V21h3.8l11-11-3.8-3.8zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.8 3.8z",
+  up: "M7.4 15.4 12 10.8l4.6 4.6L18 14l-6-6-6 6z",
+  plus: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z",
+  minus: "M19 13H5v-2h14z",
+  close: "M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"
 };
 const icon = (name) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[name]}"/></svg>`;
 
@@ -173,7 +188,10 @@ document.addEventListener("click", (e) => {
   if (b.hasAttribute("data-needsets")) return askSets(b);
   if (b.dataset.sets) { chosenSets = Number(b.dataset.sets); $("#sets").close(); }
   ownAction = true;
+  const before = whereIs(store.getState(), me.id);
+  const trainingType = before.training ? store.getState().devices[before.training].type : null;
   const result = ACTIONS[b.dataset.action](b.dataset.ref);
+  if (result.ok && result.code === "done" && trainingType) markPlanDone(trainingType);
   flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? "Letzter Satz geschafft. Das Gerät ist frei für den Nächsten." : DONE[b.dataset.action] };
   if (result.ok && b.dataset.go) return navigate(b.dataset.go);
   render();
@@ -182,6 +200,19 @@ document.addEventListener("click", (e) => {
   if (e.target.matches("[data-dismiss]")) { alertText = ""; render(); }
   if (e.target.matches("[data-showturn]")) { turnShownFor = null; render(); }
   if (e.target.matches("[data-closesets]")) $("#sets").close();
+  const pb = e.target.closest("[data-plan]");
+  if (pb) {
+    const [op, arg] = pb.dataset.plan.split(":"), i = Number(arg);
+    if (op === "open") { renderPlanEditor(); $("#plan").showModal(); return; }
+    if (op === "close") { $("#plan").close(); render(); return; }
+    if (op === "add") plan.push({ type: arg, sets: data.rules.defaultSets, done: false });
+    if (op === "del") plan.splice(i, 1);
+    if (op === "inc") plan[i].sets = Math.min(data.rules.maxSets, plan[i].sets + 1);
+    if (op === "dec") plan[i].sets = Math.max(1, plan[i].sets - 1);
+    if (op === "up" && i > 0) [plan[i - 1], plan[i]] = [plan[i], plan[i - 1]];
+    if (op === "redo") plan.forEach((p) => { p.done = false; });
+    savePlan(); renderPlanEditor(); render();
+  }
 });
 document.addEventListener("change", (e) => {
   if (e.target.matches("select[data-sets]")) chosenSets = Number(e.target.value);
@@ -211,6 +242,7 @@ function render() {
   document.querySelectorAll("[data-tab]").forEach((t) => t.setAttribute("aria-current", String(t.dataset.tab === tab)));
   if (!data) return;
   if (q.has("geraet")) renderDevice(q.get("geraet"));
+  else if (q.has("gruppe")) renderGroup(q.get("gruppe"));
   else if (tab === "qr") renderQr();
   else if (tab === "ich") renderMine();
   else if (tab === "karte") renderMap();
@@ -256,18 +288,20 @@ function typeAction(st, w, type) {
   return btn(w.queued ? "join-switch" : "join", type, w.queued ? "Wechseln: hier anstellen" : "Anstellen");
 }
 
+// Kachel je Gerätetyp: Bild zuerst, wenig Text.
 function typeCard(st, w, type) {
   const devs = devicesOf(type), free = devs.filter((d) => st.devices[d.id].status === "free").length;
-  const n = queueCount(st, type);
-  const chips = devs.map((d) => {
-    const s = st.devices[d.id], si = statusInfo(s);
-    const extra = s.status === "occupied" ? ` · Satz ${Math.min(s.completedSets + 1, s.plannedSets)}/${s.plannedSets}, frei in ${clock("free", d.id)}` : "";
-    return `<li><a class="chip" data-nav href="?geraet=${encodeURIComponent(d.id)}"><span class="pill ${si.cls}">${si.icon}</span> ${esc(d.position || d.name)}<span class="meta">${extra}</span></a></li>`;
-  }).join("");
-  return `<li class="type-card">
-    <div class="type-head"><img src="${esc(typeIcon(type))}" alt=""><div><b>${esc(typeName(type))}</b>
-      <span class="meta">${devs.length > 1 ? `${devs.length} Geräte, ${free} frei` : free ? "frei" : "belegt"} · ${waitingText(n)}${freeDeviceOfType(st, type) ? "" : ` · Wartezeit ${clock("join", type)}`}</span></div></div>
-    <ul class="chips">${chips}</ul>
+  const n = queueCount(st, type), freeNow = !!freeDeviceOfType(st, type);
+  const chips = devs.length > 1 ? `<ul class="chips">${devs.map((d) => {
+    const si = statusInfo(st.devices[d.id]);
+    return `<li><a class="chip" data-nav href="?geraet=${encodeURIComponent(d.id)}"><span class="pill ${si.cls}">${si.icon}</span>${esc(d.position)}</a></li>`;
+  }).join("")}</ul>` : "";
+  const head = devs.length > 1 ? `<b>${esc(typeName(type))}</b>` : `<a data-nav href="?geraet=${encodeURIComponent(devs[0].id)}"><b>${esc(typeName(type))}</b></a>`;
+  return `<li class="type-tile">
+    <img class="pic" src="${esc(typeIcon(type))}" alt="">
+    <div class="tt-main">${head}
+      <span class="badges"><span class="badge ${freeNow ? "free" : "wait"}">${freeNow ? `${free} frei` : `${icon("clock")} ${clock("join", type)}`}</span>${n ? `<span class="badge">${icon("user")} ${n}</span>` : ""}</span>
+      ${chips}</div>
     <div class="type-action">${typeAction(st, w, type)}</div></li>`;
 }
 
@@ -360,40 +394,40 @@ document.addEventListener("toggle", (e) => {
 
 function heroHtml(st, w) {
   const free = data.devices.filter((d) => st.devices[d.id].status === "free").length;
-  if (w.training) return `<section class="hero"><p class="meta">Du trainierst ${an(w.training)}</p><h2>${esc(label(devById(w.training)))}</h2>
-    <p>${clock("phase", w.training)}</p><a class="button primary" data-nav href="?ansicht=ich">Zum Training</a></section>`;
-  if (w.queued) return `<section class="hero"><p class="meta">Du wartest ${anType(w.queued.type)} ${esc(typeName(w.queued.type))}</p>
-    <p class="big">Nr. ${w.queued.position}<small>dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}</small></p>
-    <a class="button primary" data-nav href="?ansicht=ich">Mein Training</a></section>`;
-  return `<section class="hero"><p class="meta">Gerade im Studio</p>
-    <p class="big">${free}<small>von ${data.devices.length} Geräten frei</small></p>
-    <p class="meta">Wähle eine Muskelgruppe oder scanne den Code am Gerät.</p></section>`;
+  if (w.training) return `<a class="hero" data-nav href="?ansicht=ich"><span class="meta">Du trainierst</span><b class="hero-title">${esc(label(devById(w.training)))}</b><span class="big">${clock("phase", w.training)}</span></a>`;
+  if (w.queued) return `<a class="hero" data-nav href="?ansicht=ich"><span class="meta">${esc(typeName(w.queued.type))}</span><span class="big">Nr. ${w.queued.position}<small>${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}</small></span></a>`;
+  return `<section class="hero"><span class="big">${free}<small>/ ${data.devices.length} frei</small></span></section>`;
 }
+
+const groupsList = () => [...new Set(data.devices.map((d) => d.muscleGroup))];
+const typesOfGroup = (g) => types().filter((t) => devicesOf(t)[0].muscleGroup === g);
 
 function renderList() {
   const st = store.getState(), w = whereIs(st, me.id);
-  const groups = [...new Set(data.devices.map((d) => d.muscleGroup))];
-  const groupHtml = (g) => {
+  const tile = (g) => {
     const devs = data.devices.filter((d) => d.muscleGroup === g);
     const count = (status) => devs.filter((d) => st.devices[d.id].status === status).length;
     const free = count("free"), busy = count("occupied"), ready = count("reserved");
-    const waiting = types().filter((t) => devicesOf(t)[0].muscleGroup === g).reduce((n, t) => n + queueCount(st, t), 0);
     const pct = (n) => `${(n / devs.length) * 100}%`;
-    return `<details class="group-box" data-group="${esc(g)}"${openGroups.has(g) ? " open" : ""}>
-      <summary><span><b>${esc(g)}</b><br><span class="meta">${free} von ${devs.length} frei${waiting ? ` · ${waiting} wartend` : ""}</span></span>
-        <span class="chev">${icon("chev")}</span>
-        <span class="gauge" aria-hidden="true"><span class="g-busy" style="width:${pct(busy)}"></span><span class="g-ready" style="width:${pct(ready)}"></span><span class="g-free" style="width:${pct(free)}"></span></span>
-      </summary>
-      <div class="group-body"><ul class="types">${types().filter((t) => devicesOf(t)[0].muscleGroup === g).map((t) => typeCard(st, w, t)).join("")}</ul></div>
-    </details>`;
+    return `<li><a class="tile" data-nav href="?gruppe=${encodeURIComponent(g)}">
+      <img class="pic" src="${esc(typeIcon(typesOfGroup(g)[0]))}" alt="">
+      <b>${esc(g)}</b>
+      <span class="badge ${free ? "free" : "wait"}">${free}/${devs.length} frei</span>
+      <span class="gauge" aria-hidden="true"><span class="g-busy" style="width:${pct(busy)}"></span><span class="g-ready" style="width:${pct(ready)}"></span><span class="g-free" style="width:${pct(free)}"></span></span>
+    </a></li>`;
   };
-  $("#view").innerHTML = `${heroHtml(st, w)}${flashHtml()}
-    <h3 class="group">Muskelgruppen</h3>
-    <div class="groups">${groups.map(groupHtml).join("")}</div>`;
+  $("#view").innerHTML = `${heroHtml(st, w)}${flashHtml()}<ul class="tiles">${groupsList().map(tile).join("")}</ul>`;
   document.title = "Geräteblick – Studio";
 }
 
-// Tab „Karte“: ganzer Grundriss, jedes Gerät antippbar.
+function renderGroup(g) {
+  if (!groupsList().includes(g)) return navigate("?");
+  const st = store.getState(), w = whereIs(st, me.id);
+  $("#view").innerHTML = `<a class="back" data-nav href="?">${icon("back")} Studio</a><h2>${esc(g)}</h2>${flashHtml()}
+    <ul class="types">${typesOfGroup(g).map((t) => typeCard(st, w, t)).join("")}</ul>`;
+  document.title = `Geräteblick – ${g}`;
+}
+
 function renderMap() {
   const st = store.getState(), w = whereIs(st, me.id);
   const mine = w.reserved || w.training || null;
@@ -416,15 +450,14 @@ function renderDevice(id) {
   }
   const st = store.getState(), w = whereIs(st, me.id), s = st.devices[d.id], si = statusInfo(s);
   $("#view").innerHTML = `
-    <a class="back" data-nav href="?">${icon("back")} Studio</a>
+    <a class="back" data-nav href="?gruppe=${encodeURIComponent(d.muscleGroup)}">${icon("back")} ${esc(d.muscleGroup)}</a>
     <article class="device">
-      <img src="${esc(d.icon)}" alt="Skizze: ${esc(d.name)}" class="device-img">
+      <img src="${esc(d.icon)}" alt="Piktogramm: ${esc(d.exercise)}" class="device-img pic">
       <div>
         <h2>${esc(label(d))}</h2>
-        <p class="meta">${esc(d.exercise)} · ${esc(d.muscleGroup)}</p>
+        <p class="meta">${esc(d.exercise)}</p>
+        <p class="badges"><span class="pill big ${si.cls}">${si.icon} ${si.text}</span>${queueCount(st, d.type) ? `<span class="badge">${icon("user")} ${queueCount(st, d.type)} wartend</span>` : ""}</p>
         <p class="where">${icon("pin")} <span>${esc(d.location)}</span></p>
-        <p class="pill big ${si.cls}">${si.icon} ${si.text}</p>
-        <p>${statusLine(s)} ${esc(typeName(d.type))}: ${waitingText(queueCount(st, d.type))}.</p>
         ${s.occupiedBy?.id === me.id ? "" : progressHtml(d, s)}
       </div>
     </article>
@@ -441,36 +474,68 @@ function renderDevice(id) {
   document.title = `Geräteblick – ${label(d)}`;
 }
 
-// Tab "Mein Training": aktuelles Gerät, Warteschlange, nächstes Gerät.
+// Tab „Training“: nur das, was jetzt dran ist, und der eigene Plan.
+function planAction(st, w, item) {
+  const a = typeAction(st, w, item.type);
+  const b = a.includes("data-needsets") ? a.replace(" data-needsets", ` data-sets="${item.sets}"`) : a; // Sätze kommen aus dem Plan
+  return b.replace('class="button"', 'class="button primary"'); // nächste Übung = Hauptaktion
+}
+
 function renderMine() {
   const st = store.getState(), w = whereIs(st, me.id), r = data.rules;
   const cur = w.training || w.reserved;
-  let html = `<h2>Mein Training</h2>${flashHtml()}<h3 class="group">Aktuelles Gerät</h3>`;
+  let html = `<h2>Training</h2>${flashHtml()}`;
   if (cur) {
-    const d = devById(cur), s = st.devices[cur];
-    html += `<article class="card"><div class="type-head"><img src="${esc(d.icon)}" alt=""><div>
-      <h2>${link(cur)}</h2><span class="meta">${esc(d.location)}</span></div></div>
+    const d = devById(cur);
+    html += `<article class="card now"><div class="type-head"><img class="pic" src="${esc(d.icon)}" alt=""><div>
+      <h3>${link(cur)}</h3><span class="meta">${esc(d.location)}</span></div></div>
       <section class="actions">${deviceActionsHtml(st, w, d)}</section></article>`;
-  } else html += `<p class="meta">Du trainierst gerade nicht. Wähle unten ein Gerät oder scanne den QR-Code am Gerät.</p>`;
-
-  html += `<h3 class="group">Warteschlange</h3>`;
+  }
   if (w.queued) {
     const t = w.queued.type;
-    html += `<div class="card"><p>Du bist <b>Nr. ${w.queued.position}</b> ${anType(t)} <b>${esc(typeName(t))}</b> (${w.queued.sets} Sätze), dran in ${clock("eta", t, ` data-pos="${w.queued.position}"`)}.</p>
-      ${btn("leave", t, "Warteschlange verlassen")}${alternativesHtml(st, w, t)}</div>`;
-  } else html += `<p class="meta">Du stehst nirgends an.</p>`;
+    html += `<article class="card now queued"><div class="type-head"><img class="pic" src="${esc(typeIcon(t))}" alt=""><div>
+      <h3>${esc(typeName(t))}</h3><span class="big">Nr. ${w.queued.position}<small>${clock("eta", t, ` data-pos="${w.queued.position}"`)}</small></span></div></div>
+      <button type="button" class="linklike" data-action="leave" data-ref="${esc(t)}">Warteschlange verlassen</button></article>`;
+  }
+  if (!cur && !w.queued) html += `<p class="meta empty">Gerade nichts aktiv.</p>`;
 
+  // Plan
   const train = w.training ? st.devices[w.training] : null;
-  html += `<h3 class="group">Nächstes Gerät</h3>`;
-  if (train && !trainingFarEnough(train, r))
-    html += `<p class="meta">Anstellen geht ab mehr als ${r.nextQueueAfterPercentSets} % deiner Sätze, also nach Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1} von ${train.plannedSets}.</p>`;
-  const now = Date.now();
-  const list = types().filter((t) => !cur || st.devices[cur].type !== t)
-    .map((t) => ({ t, wait: joinWaitMs(st, t, r, now) })).sort((a, b) => a.wait - b.wait);
-  html += `<ul class="next">${list.map(({ t, wait }) => `<li class="next-row">
-      <span><b>${esc(typeName(t))}</b><span class="meta"> · ${esc(devicesOf(t)[0].muscleGroup)} · ${wait === 0 ? "frei" : `dran in ${clock("join", t)}`}</span></span>${typeAction(st, w, t)}</li>`).join("")}</ul>`;
+  const blocked = train && !trainingFarEnough(train, r);
+  const nextIdx = plan.findIndex((p) => !p.done && p.type !== train?.type && p.type !== (w.reserved && st.devices[w.reserved].type));
+  html += `<div class="section-head"><h3 class="group">Dein Plan</h3><button type="button" class="linklike" data-plan="open">${icon("edit")} ${plan.length ? "Bearbeiten" : "Anlegen"}</button></div>`;
+  if (!plan.length) {
+    html += `<button type="button" class="card plan-empty" data-plan="open">${icon("plus")} Übungen für heute auswählen</button>`;
+  } else {
+    html += `<ol class="plan">${plan.map((p, i) => {
+      const isCur = train?.type === p.type && !p.done && i === plan.findIndex((x) => !x.done && x.type === p.type);
+      const queuedHere = w.queued?.type === p.type;
+      let status;
+      if (p.done) status = `<span class="badge free">${icon("check")} erledigt</span>`;
+      else if (isCur) status = `<span class="badge free">läuft</span>`;
+      else if (queuedHere) status = `<span class="badge wait">Nr. ${w.queued.position} · ${clock("eta", p.type, ` data-pos="${w.queued.position}"`)}</span>`;
+      else status = freeDeviceOfType(st, p.type) ? `<span class="badge free">frei</span>` : `<span class="badge wait">${icon("clock")} ${clock("join", p.type)}</span>`;
+      const action = i === nextIdx && !queuedHere ? (blocked ? `<span class="meta">Anstellen ab Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}</span>` : planAction(st, w, p)) : "";
+      return `<li class="plan-row${p.done ? " done" : ""}${i === nextIdx ? " next" : ""}">
+        <img class="pic" src="${esc(typeIcon(p.type))}" alt=""><span class="pr-main"><b>${esc(typeName(p.type))}</b><span class="meta">${p.sets} Sätze</span>${status}</span>${action}</li>`;
+    }).join("")}</ol>`;
+    if (plan.every((p) => p.done)) html += `<p class="meta">Plan geschafft. <button type="button" class="linklike" data-plan="redo">Nochmal von vorn</button></p>`;
+  }
   $("#view").innerHTML = html;
-  document.title = "Geräteblick – Mein Training";
+  document.title = "Geräteblick – Training";
+}
+
+function renderPlanEditor() {
+  const dlg = $("#plan");
+  dlg.innerHTML = `<h2>Dein Plan</h2>
+    ${plan.length ? `<ol class="plan edit">${plan.map((p, i) => `<li class="plan-row">
+      <img class="pic" src="${esc(typeIcon(p.type))}" alt=""><span class="pr-main"><b>${esc(typeName(p.type))}</b></span>
+      <span class="stepper"><button type="button" data-plan="dec:${i}" aria-label="Ein Satz weniger">${icon("minus")}</button><b>${p.sets}</b><button type="button" data-plan="inc:${i}" aria-label="Ein Satz mehr">${icon("plus")}</button></span>
+      ${i ? `<button type="button" class="iconbtn" data-plan="up:${i}" aria-label="Nach oben">${icon("up")}</button>` : `<span class="iconbtn-space"></span>`}
+      <button type="button" class="iconbtn" data-plan="del:${i}" aria-label="Entfernen">${icon("close")}</button></li>`).join("")}</ol>` : `<p class="meta">Tippe Übungen an, um sie hinzuzufügen.</p>`}
+    <h3 class="group">Hinzufügen</h3>
+    <div class="pickgrid">${types().map((t) => `<button type="button" class="pick" data-plan="add:${t}"><img class="pic" src="${esc(typeIcon(t))}" alt=""><span>${esc(typeName(t))}</span></button>`).join("")}</div>
+    <button type="button" class="button primary wide" data-plan="close">Fertig</button>`;
 }
 
 function baseUrl() {

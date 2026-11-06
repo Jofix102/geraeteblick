@@ -7,9 +7,9 @@
   <meta name="theme-color" content="#141516" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f3f2ee" media="(prefers-color-scheme: light)">
   <title>Geräteblick</title>
-  <link rel="stylesheet" href="styles.css?v=0.5.1">
+  <link rel="stylesheet" href="styles.css?v=0.6.0">
   <script src="js/vendor/qrcode.js"></script>
-  <script type="module" src="js/app.js?v=0.5.1"></script>
+  <script type="module" src="js/app.js?v=0.6.0"></script>
 </head>
 <body>
   <header class="top">
@@ -29,17 +29,18 @@
     <button type="button" id="retry" class="button primary">Erneut laden</button>
   </div>
   <footer class="foot">
-    <p>Prototyp v0.5.1 zur Seminararbeit Web Technologie · <a data-nav href="?ansicht=qr">QR-Codes zum Ausdrucken</a> · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
+    <p>Prototyp v0.6 zur Seminararbeit Web Technologie · <a data-nav href="?ansicht=qr">QR-Codes zum Ausdrucken</a> · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
   </footer>
   <div class="dock">
     <div id="mybar" class="mybar" role="status" aria-live="polite" hidden></div>
     <nav class="tabbar" aria-label="Hauptnavigation">
-      <a data-nav data-tab="studio" href="?"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z"/></svg><span>Studio</span></a>
-      <a data-nav data-tab="ich" href="?ansicht=ich"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 10h2v4H3zm16 0h2v4h-2zM6 7h3v10H6zm9 0h3v10h-3zM9 11h6v2H9z"/></svg><span>Mein Training</span></a>
-      <a data-nav data-tab="karte" href="?ansicht=karte"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zm6 0v12m6-10v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Karte</span></a>
+      <a data-nav data-tab="studio" href="?"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Studio</span></a>
+      <a data-nav data-tab="ich" href="?ansicht=ich"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6.5 7v10M17.5 7v10M3.5 10v4M20.5 10v4M6.5 12h11"/></svg><span>Training</span></a>
+      <a data-nav data-tab="karte" href="?ansicht=karte"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2zM9 4.5v13M15 6.5v13"/></svg><span>Karte</span></a>
     </nav>
   </div>
   <dialog id="sets" class="sheet" aria-label="Sätze wählen"></dialog>
+  <dialog id="plan" class="sheet" aria-label="Trainingsplan"></dialog>
   <dialog id="turn" class="sheet" aria-label="Du bist dran"></dialog>
   <dialog id="intro" class="sheet" aria-label="Über diesen Prototyp">
     <h2>Willkommen bei Geräteblick</h2>

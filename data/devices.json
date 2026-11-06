@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "0.5.0",
+    "version": "0.6.0",
     "studioName": "Beispielstudio (fiktiv)",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
@@ -43,7 +43,7 @@
       },
       "exercise": "Latzug breit",
       "muscleGroup": "Rücken",
-      "icon": "assets/latzug.svg",
+      "icon": "assets/pikto/latzug.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -70,7 +70,7 @@
       },
       "exercise": "Latzug breit",
       "muscleGroup": "Rücken",
-      "icon": "assets/latzug.svg",
+      "icon": "assets/pikto/latzug.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -97,7 +97,7 @@
       },
       "exercise": "Rudern sitzend",
       "muscleGroup": "Rücken",
-      "icon": "assets/ruderzug.svg",
+      "icon": "assets/pikto/rudermaschine.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -124,7 +124,7 @@
       },
       "exercise": "Brustpresse sitzend",
       "muscleGroup": "Brust",
-      "icon": "assets/brustpresse.svg",
+      "icon": "assets/pikto/brustpresse.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -151,7 +151,7 @@
       },
       "exercise": "Brustpresse sitzend",
       "muscleGroup": "Brust",
-      "icon": "assets/brustpresse.svg",
+      "icon": "assets/pikto/brustpresse.svg",
       "initialState": {
         "status": "free",
         "occupiedBy": null,
@@ -175,7 +175,7 @@
       },
       "exercise": "Butterfly",
       "muscleGroup": "Brust",
-      "icon": "assets/butterfly.svg",
+      "icon": "assets/pikto/butterfly.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -202,7 +202,7 @@
       },
       "exercise": "Beinpresse",
       "muscleGroup": "Beine",
-      "icon": "assets/beinpresse.svg",
+      "icon": "assets/pikto/beinpresse.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -229,7 +229,7 @@
       },
       "exercise": "Beinstrecken",
       "muscleGroup": "Beine",
-      "icon": "assets/legextension.svg",
+      "icon": "assets/pikto/legextension.svg",
       "initialState": {
         "status": "free",
         "occupiedBy": null,
@@ -253,7 +253,7 @@
       },
       "exercise": "Beinstrecken",
       "muscleGroup": "Beine",
-      "icon": "assets/legextension.svg",
+      "icon": "assets/pikto/legextension.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -280,7 +280,7 @@
       },
       "exercise": "Bizepscurls an der Preacher-Bank",
       "muscleGroup": "Bizeps",
-      "icon": "assets/preacher.svg",
+      "icon": "assets/pikto/preacher.svg",
       "initialState": {
         "status": "free",
         "occupiedBy": null,
@@ -304,7 +304,7 @@
       },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
-      "icon": "assets/kabelturm.svg",
+      "icon": "assets/pikto/kabelturm.svg",
       "initialState": {
         "status": "free",
         "occupiedBy": null,
@@ -328,7 +328,7 @@
       },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
-      "icon": "assets/kabelturm.svg",
+      "icon": "assets/pikto/kabelturm.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -355,7 +355,7 @@
       },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
-      "icon": "assets/kabelturm.svg",
+      "icon": "assets/pikto/kabelturm.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -382,7 +382,7 @@
       },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
-      "icon": "assets/kabelturm.svg",
+      "icon": "assets/pikto/kabelturm.svg",
       "initialState": {
         "status": "free",
         "occupiedBy": null,
@@ -406,7 +406,7 @@
       },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
-      "icon": "assets/kabelturm.svg",
+      "icon": "assets/pikto/kabelturm.svg",
       "initialState": {
         "status": "occupied",
         "occupiedBy": {
@@ -433,7 +433,7 @@
       },
       "exercise": "frei wählbare Kabelübung",
       "muscleGroup": "Ganzkörper",
-      "icon": "assets/kabelturm.svg",
+      "icon": "assets/pikto/kabelturm.svg",
       "initialState": {
         "status": "free",
         "occupiedBy": null,

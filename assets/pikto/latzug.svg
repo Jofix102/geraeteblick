@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Latzug">
+<g fill="none" stroke="#8b9196" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="8" y2="58"/><line x1="8" y1="6" x2="48" y2="6"/><line x1="33" y1="6" x2="33" y2="11"/><line x1="16" y1="12" x2="50" y2="12"/><line x1="20" y1="47" x2="38" y2="47"/><line x1="38" y1="38" x2="46" y2="38"/></g>
+<g fill="none" stroke="#ffd400" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><polyline points="33,31 32,45"/><polyline points="32,45 44,44 44,57"/><polyline points="33,31 24,24 20,13"/><polyline points="33,31 42,24 46,13"/></g>
+<circle cx="33" cy="23" r="4.5" fill="#ffd400"/>
+</svg>
