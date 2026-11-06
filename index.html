@@ -2,34 +2,54 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Prototyp einer digitalen Warteschlange für Trainingsgeräte im Fitnessstudio (Simulation mit fiktiven Daten).">
+  <meta name="theme-color" content="#141516" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f3f2ee" media="(prefers-color-scheme: light)">
   <title>Geräteblick</title>
-  <link rel="stylesheet" href="styles.css?v=0.4.4">
+  <link rel="stylesheet" href="styles.css?v=0.5.0">
   <script src="js/vendor/qrcode.js"></script>
-  <script type="module" src="js/app.js?v=0.4.4"></script>
+  <script type="module" src="js/app.js?v=0.5.0"></script>
 </head>
 <body>
   <header class="top">
-    <div class="brand"><a data-nav href="?" class="logo">Geräteblick</a><span class="me">Du bist <b id="me">…</b></span></div>
-    <nav aria-label="Hauptnavigation">
-      <a data-nav data-tab="geraete" href="?">Geräte</a>
-      <a data-nav data-tab="ich" href="?ansicht=ich">Mein Training</a>
-      <a data-nav data-tab="qr" href="?ansicht=qr">QR-Codes</a>
-    </nav>
+    <a data-nav href="?" class="brand" aria-label="Geräteblick, zur Startseite">
+      <span class="logo-mark" aria-hidden="true"></span>
+      <span class="brand-text"><b>Geräteblick</b><small>Beispielstudio (fiktiv)</small></span>
+    </a>
+    <div class="top-right">
+      <button type="button" class="sim-tag" data-intro title="Was ist simuliert?">Simulation</button>
+      <span class="me" title="Deine Gast-ID in diesem Tab"><b id="me">…</b></span>
+    </div>
   </header>
-  <p class="sim" role="note">Simulation: Daten sind fiktiv und bleiben in diesem Browser. Zwei Tabs nebeneinander zeigen zwei Gäste.</p>
-  <div id="mybar" class="mybar" role="status" aria-live="polite" hidden></div>
-  <dialog id="sets" class="turn" aria-label="Sätze wählen"></dialog>
-  <dialog id="turn" class="turn" aria-label="Du bist dran"></dialog>
   <main id="view" tabindex="-1"></main>
   <div id="error" class="error" role="alert" hidden>
     <strong>Die Gerätedaten konnten nicht geladen werden.</strong>
     <p id="error-detail"></p>
-    <button type="button" id="retry">Erneut laden</button>
+    <button type="button" id="retry" class="button primary">Erneut laden</button>
   </div>
-  <footer>
-    <p>Prototyp v0.4.4 zur Seminararbeit Web Technologie · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
+  <footer class="foot">
+    <p>Prototyp v0.5 zur Seminararbeit Web Technologie · <a data-nav href="?ansicht=qr">QR-Codes zum Ausdrucken</a> · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
   </footer>
+  <div class="dock">
+    <div id="mybar" class="mybar" role="status" aria-live="polite" hidden></div>
+    <nav class="tabbar" aria-label="Hauptnavigation">
+      <a data-nav data-tab="studio" href="?"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z"/></svg><span>Studio</span></a>
+      <a data-nav data-tab="ich" href="?ansicht=ich"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 10h2v4H3zm16 0h2v4h-2zM6 7h3v10H6zm9 0h3v10h-3zM9 11h6v2H9z"/></svg><span>Mein Training</span></a>
+      <a data-nav data-tab="karte" href="?ansicht=karte"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zm6 0v12m6-10v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Karte</span></a>
+    </nav>
+  </div>
+  <dialog id="sets" class="sheet" aria-label="Sätze wählen"></dialog>
+  <dialog id="turn" class="sheet" aria-label="Du bist dran"></dialog>
+  <dialog id="intro" class="sheet" aria-label="Über diesen Prototyp">
+    <h2>Willkommen bei Geräteblick</h2>
+    <p>Hier siehst du, welche Geräte frei sind, stellst dich an und wirst gerufen, wenn du dran bist.</p>
+    <ul class="intro-list">
+      <li><b>Simulation:</b> Alle Daten sind fiktiv. Die anderen Gäste („Sim-Gast“) sind Bots.</li>
+      <li><b>Zwei Gäste testen:</b> Öffne die Seite in zwei Tabs desselben Browsers. Jeder Tab ist ein eigener Gast.</li>
+      <li><b>Handy und PC</b> sehen sich im Prototyp nicht. Dafür bräuchte es einen Server.</li>
+    </ul>
+    <button type="button" class="button primary wide" data-closeintro>Los geht's</button>
+  </dialog>
 </body>
 </html>

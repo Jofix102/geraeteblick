@@ -1,7 +1,7 @@
 {
   "meta": {
-    "version": "0.4.2",
-    "studioName": "City Fit (fiktiv)",
+    "version": "0.5.0",
+    "studioName": "Beispielstudio (fiktiv)",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
     "sourceNote": "Alle Angaben sind eigens erstellte, fiktive Beispieldaten (Geräteauswahl nach Vorgabe von Finn, 06.11.2026). Sie stammen nicht aus einem realen Studio und werden nicht live synchronisiert."

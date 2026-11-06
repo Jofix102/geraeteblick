@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.4.4";
-import { createLocalStore } from "./store-local.js?v=0.4.4";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.5.0";
+import { createLocalStore } from "./store-local.js?v=0.5.0";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.4.4";
+} from "./queue-logic.js?v=0.5.0";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -20,6 +20,17 @@ let lastTouch = 0;
 ["click", "keydown", "change", "touchstart"].forEach((t) => document.addEventListener(t, () => {
   if (Date.now() - lastTouch > 5000) { lastTouch = Date.now(); touch(me); }
 }, { passive: true }));
+
+// ---------- Symbole (eigene SVG-Pfade statt Emojis) ----------
+const ICONS = {
+  pin: "M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z",
+  check: "M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z",
+  dot: "M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z",
+  clock: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 10.4 3.5 2.1-.8 1.3L11 13V6h2z",
+  back: "M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z",
+  chev: "M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6z"
+};
+const icon = (name) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[name]}"/></svg>`;
 
 // ---------- Hilfen ----------
 const label = (d) => d.position ? `${d.name} ${d.position}` : d.name;
@@ -43,9 +54,9 @@ const btn = (action, ref, text, primary = false, go = "", needSets = NEEDS_SETS.
   `<button type="button" class="${primary ? "button primary" : "button"}" data-action="${action}" data-ref="${esc(ref)}"${go ? ` data-go="${esc(go)}"` : ""}${needSets ? " data-needsets" : ""}>${text}</button>`;
 
 function statusInfo(s) {
-  if (s.status === "free") return { cls: "free", text: "Frei", icon: "✓" };
-  if (s.status === "reserved") return { cls: "ready", text: "Reserviert", icon: "⏱" };
-  return { cls: "busy", text: "Belegt", icon: "●" };
+  if (s.status === "free") return { cls: "free", text: "Frei", icon: icon("check") };
+  if (s.status === "reserved") return { cls: "ready", text: "Reserviert", icon: icon("clock") };
+  return { cls: "busy", text: "Belegt", icon: icon("dot") };
 }
 
 function statusLine(s) {
@@ -73,8 +84,11 @@ function renderBar() {
   if (w.reserved) parts.push(`<p class="bar-line turn"><b>${st.devices[w.reserved].reservedFor.direct ? "Für dich reserviert:" : `Du bist dran ${an(w.reserved)}`} ${esc(label(devById(w.reserved)))}!</b> ${clock("res", w.reserved)} <button type="button" class="button primary" data-showturn>Karte zeigen</button></p>`);
   if (w.training && presence(st.devices[w.training], data.rules, Date.now())?.state === "ask")
     parts.push(`<p class="bar-line turn"><b>Bist du noch da?</b> Sonst wirst du in ${clock("pres", w.training)} abgemeldet. ${btn("here", w.training, "Ja, bin noch da", true)}</p>`);
-  if (w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?ansicht=ich">Öffnen</a></p>`);
-  if (w.queued) parts.push(`<p class="bar-line">Du bist <b>Nr. ${w.queued.position}</b> ${anType(w.queued.type)} <b>${esc(typeName(w.queued.type))}</b>, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)} <a data-nav href="?ansicht=ich">Ansehen</a> <button type="button" class="linklike" data-action="leave" data-ref="${esc(w.queued.type)}">Verlassen</button></p>`);
+  // Auf „Mein Training“ und auf der eigenen Geräteseite steht das schon groß da: Leiste dort knapp halten.
+  const q = new URLSearchParams(location.search);
+  const onMine = q.get("ansicht") === "ich", onDev = q.get("geraet");
+  if (w.training && !onMine && onDev !== w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?ansicht=ich">Öffnen</a></p>`);
+  if (w.queued && !onMine) parts.push(`<p class="bar-line">Du bist <b>Nr. ${w.queued.position}</b> ${anType(w.queued.type)} <b>${esc(typeName(w.queued.type))}</b>, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)} <a data-nav href="?ansicht=ich">Ansehen</a> <button type="button" class="linklike" data-action="leave" data-ref="${esc(w.queued.type)}">Verlassen</button></p>`);
   bar.innerHTML = parts.join("");
   bar.hidden = parts.length === 0;
   renderTurn(st, w);
@@ -93,7 +107,8 @@ function renderTurn(st, w) {
   const arrive = w.training ? `${an(w.training) === "am" ? "Am" : "An der"} ${esc(label(devById(w.training)))} beenden, ich bin da` : "Ich bin da, Training starten";
   dlg.innerHTML = `
     <h2>${direct ? `Geh ${feminine(d.name) ? "zur" : "zum"}` : "Du bist dran:"} ${esc(label(d))}</h2>
-    <p>📍 ${esc(d.location)}. Das Gerät ist für dich reserviert. Bestätige innerhalb von <b>${clock("res", d.id)}</b>, sobald du angekommen bist.</p>
+    <p class="where">${icon("pin")} <span>${esc(d.location)}</span></p>
+    <p>Das Gerät ist für dich reserviert. Bestätige innerhalb von <b>${clock("res", d.id)}</b>, sobald du angekommen bist.</p>
     ${mapSvg(d.id)}
     <p class="meta">${n} ${n === 1 ? "Satz" : "Sätze"}</p>
     <div class="actions">${btn("start", d.id, arrive, true, "?ansicht=ich", false)}
@@ -112,20 +127,21 @@ function signal() {
 }
 
 // Grundriss als SVG aus den Koordinaten in devices.json; hervorgehobenes Gerät pulsiert.
-function mapSvg(highlightId) {
+function mapSvg(highlightId, clickable = false) {
   const m = data.map, st = store.getState();
   const zones = m.zones.map((z) => `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="2" class="zone"/>
     <text x="${z.x + 1.5}" y="${z.y + z.h - 1.5}" class="zone-label">${esc(z.label)}</text>`).join("");
   const dots = data.devices.map((d) => {
     const s = st.devices[d.id], hi = d.id === highlightId;
-    return `<g class="spot ${s.status}${hi ? " hi" : ""}"><title>${esc(label(d))}</title>
+    const g = `<g class="spot ${s.status}${hi ? " hi" : ""}"><title>${esc(label(d))}: ${statusInfo(s).text}</title>
       ${hi ? `<circle cx="${d.map.x}" cy="${d.map.y}" r="6" class="pulse"/>` : ""}
-      <circle cx="${d.map.x}" cy="${d.map.y}" r="${hi ? 3.6 : 2.4}"/></g>`;
+      <circle cx="${d.map.x}" cy="${d.map.y}" r="${hi ? 3.6 : clickable ? 3 : 2.4}"/></g>`;
+    return clickable ? `<a href="?geraet=${encodeURIComponent(d.id)}" data-nav aria-label="${esc(label(d))}, ${statusInfo(s).text}">${g}</a>` : g;
   }).join("");
   const e = m.entrance;
-  return `<svg class="map" viewBox="0 0 ${m.width} ${m.height + 4}" role="img" aria-label="Grundriss: ${esc(label(devById(highlightId)))} ist markiert">
+  return `<svg class="map" viewBox="0 0 ${m.width} ${m.height + 4}" role="img" aria-label="${highlightId ? `Grundriss: ${esc(label(devById(highlightId)))} ist markiert` : "Grundriss des Studios"}">
     <rect x="0.5" y="0.5" width="${m.width - 1}" height="${m.height - 1}" class="floor"/>${zones}${dots}
-    <text x="${e.x}" y="${e.y + 3}" class="entrance" text-anchor="middle">▲ ${esc(e.label)}</text></svg>`;
+    <text x="${e.x}" y="${e.y + 3}" class="entrance" text-anchor="middle">${esc(e.label)} ↑</text></svg>`;
 }
 
 // ---------- Aktionen (Knöpfe mit data-action) ----------
@@ -190,12 +206,14 @@ window.addEventListener("popstate", () => render());
 function render() {
   renderBar();
   const q = new URLSearchParams(location.search);
-  const tab = q.has("geraet") ? "" : q.get("ansicht") === "qr" ? "qr" : q.get("ansicht") === "ich" ? "ich" : "geraete";
+  const v = q.get("ansicht");
+  const tab = q.has("geraet") ? "" : v === "qr" ? "qr" : v === "ich" ? "ich" : v === "karte" ? "karte" : "studio";
   document.querySelectorAll("[data-tab]").forEach((t) => t.setAttribute("aria-current", String(t.dataset.tab === tab)));
   if (!data) return;
   if (q.has("geraet")) renderDevice(q.get("geraet"));
   else if (tab === "qr") renderQr();
   else if (tab === "ich") renderMine();
+  else if (tab === "karte") renderMap();
   else renderList();
   fillClocksSoon();
 }
@@ -295,10 +313,17 @@ function alternativesHtml(st, w, type) {
 function deviceActionsHtml(st, w, d) {
   const s = st.devices[d.id], r = data.rules;
   if (s.occupiedBy?.id === me.id)
-    return `<p class="clockbig">${clock("phase", d.id)}</p>
-      ${btn("set", d.id, `✓ Satz ${s.completedSets + 1} von ${s.plannedSets} geschafft`, true)}
-      ${btn("finish", d.id, "Training abbrechen, Gerät freigeben")}
-      <p class="meta">Hake jeden Satz direkt ab. So sehen die Wartenden, wie weit du bist.</p>`;
+    return `<div class="trainer">
+      <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Uhr für den aktuellen Satz">
+        <circle class="track" cx="60" cy="60" r="50"/>
+        <circle class="arc" cx="60" cy="60" r="50" data-clock="ring" data-ref="${esc(d.id)}" stroke-dasharray="314.16" stroke-dashoffset="0"/>
+        <text x="60" y="62" text-anchor="middle" data-clock="ringtime" data-ref="${esc(d.id)}">–:––</text>
+        <text x="60" y="78" text-anchor="middle" class="ring-sub" data-clock="ringlabel" data-ref="${esc(d.id)}"></text>
+      </svg>
+      <div class="dots" aria-label="${s.completedSets} von ${s.plannedSets} Sätzen">${Array.from({ length: s.plannedSets }, (_, i) => `<span class="dot${i < s.completedSets ? " done" : ""}"></span>`).join("")}</div>
+      ${btn("set", d.id, `${icon("check")} Satz ${s.completedSets + 1} von ${s.plannedSets} geschafft`, true).replace('class="button primary"', 'class="button primary check"')}
+      <button type="button" class="linklike" data-action="finish" data-ref="${esc(d.id)}">Training abbrechen, Gerät freigeben</button>
+    </div>`;
   if (s.reservedFor?.id === me.id)
     return `<p><b>Für dich reserviert.</b> Noch ${clock("res", d.id)} Zeit, deine Ankunft zu bestätigen.</p>
       ${btn("start", d.id, "Ich bin da, Training starten", true, "", false)} ${btn("finish", d.id, "Platz freigeben")}`;
@@ -314,7 +339,7 @@ function deviceActionsHtml(st, w, d) {
     ? `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Anstellen geht erst nach mehr als ${r.nextQueueAfterPercentSets} % deiner Sätze.</p>`
     : "";
   const many = devicesOf(d.type).length > 1;
-  return `<p>Wartezeit: ${clock("join", d.type)}.${many ? ` Du bekommst das erste freie Gerät vom Typ ${esc(typeName(d.type))}.` : ""}</p>
+  return `<p>Wartezeit <b>${clock("join", d.type)}</b>${many ? `<br><span class="meta">Du bekommst das erste freie Gerät vom Typ ${esc(typeName(d.type))}.</span>` : ""}</p>
     ${action.replace('class="button"', 'class="button primary"')}`;
 }
 
@@ -325,18 +350,57 @@ function simHtml(d, s) {
 }
 
 // ---------- Ansichten ----------
+// Startseite „Studio“: oben dein Stand bzw. die Auslastung, darunter Muskelgruppen zum Aufklappen.
+const openGroups = new Set();
+document.addEventListener("toggle", (e) => {
+  if (!e.target.matches?.("details[data-group]")) return;
+  e.target.open ? openGroups.add(e.target.dataset.group) : openGroups.delete(e.target.dataset.group);
+}, true);
+
+function heroHtml(st, w) {
+  const free = data.devices.filter((d) => st.devices[d.id].status === "free").length;
+  if (w.training) return `<section class="hero"><p class="meta">Du trainierst ${an(w.training)}</p><h2>${esc(label(devById(w.training)))}</h2>
+    <p>${clock("phase", w.training)}</p><a class="button primary" data-nav href="?ansicht=ich">Zum Training</a></section>`;
+  if (w.queued) return `<section class="hero"><p class="meta">Du wartest ${anType(w.queued.type)} ${esc(typeName(w.queued.type))}</p>
+    <p class="big">Nr. ${w.queued.position}<small>dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}</small></p>
+    <a class="button primary" data-nav href="?ansicht=ich">Mein Training</a></section>`;
+  return `<section class="hero"><p class="meta">Gerade im Studio</p>
+    <p class="big">${free}<small>von ${data.devices.length} Geräten frei</small></p>
+    <p class="meta">Wähle eine Muskelgruppe oder scanne den Code am Gerät.</p></section>`;
+}
+
 function renderList() {
   const st = store.getState(), w = whereIs(st, me.id);
-  const free = data.devices.filter((d) => st.devices[d.id].status === "free").length;
   const groups = [...new Set(data.devices.map((d) => d.muscleGroup))];
-  $("#view").innerHTML = `
-    <h2>Geräte in ${esc(data.meta.studioName)}</h2>
-    <p class="meta">${data.devices.length} Geräte, ${free} frei. Du stellst dich je Gerätetyp an und bekommst das erste freie Gerät.</p>
-    ${flashHtml()}
-    
-    ${groups.map((g) => `<h3 class="group">${esc(g)}</h3>
-      <ul class="types">${types().filter((t) => devicesOf(t)[0].muscleGroup === g).map((t) => typeCard(st, w, t)).join("")}</ul>`).join("")}`;
-  document.title = "Geräteblick – Übersicht";
+  const groupHtml = (g) => {
+    const devs = data.devices.filter((d) => d.muscleGroup === g);
+    const count = (status) => devs.filter((d) => st.devices[d.id].status === status).length;
+    const free = count("free"), busy = count("occupied"), ready = count("reserved");
+    const waiting = types().filter((t) => devicesOf(t)[0].muscleGroup === g).reduce((n, t) => n + queueCount(st, t), 0);
+    const pct = (n) => `${(n / devs.length) * 100}%`;
+    return `<details class="group-box" data-group="${esc(g)}"${openGroups.has(g) ? " open" : ""}>
+      <summary><span><b>${esc(g)}</b><br><span class="meta">${free} von ${devs.length} frei${waiting ? ` · ${waiting} wartend` : ""}</span></span>
+        <span class="chev">${icon("chev")}</span>
+        <span class="gauge" aria-hidden="true"><span class="g-busy" style="width:${pct(busy)}"></span><span class="g-ready" style="width:${pct(ready)}"></span><span class="g-free" style="width:${pct(free)}"></span></span>
+      </summary>
+      <div class="group-body"><ul class="types">${types().filter((t) => devicesOf(t)[0].muscleGroup === g).map((t) => typeCard(st, w, t)).join("")}</ul></div>
+    </details>`;
+  };
+  $("#view").innerHTML = `${heroHtml(st, w)}${flashHtml()}
+    <h3 class="group">Muskelgruppen</h3>
+    <div class="groups">${groups.map(groupHtml).join("")}</div>`;
+  document.title = "Geräteblick – Studio";
+}
+
+// Tab „Karte“: ganzer Grundriss, jedes Gerät antippbar.
+function renderMap() {
+  const st = store.getState(), w = whereIs(st, me.id);
+  const mine = w.reserved || w.training || null;
+  $("#view").innerHTML = `<h2>Karte</h2>
+    <p class="meta">Tippe ein Gerät an, um es zu öffnen.</p>
+    ${mapSvg(mine, true)}
+    <p class="legend"><span><i style="background:var(--ok)"></i>frei</span><span><i style="background:var(--busy)"></i>belegt</span><span><i style="background:var(--ready)"></i>reserviert</span>${mine ? `<span><i style="background:var(--accent)"></i>dein Gerät</span>` : ""}</p>`;
+  document.title = "Geräteblick – Karte";
 }
 
 function renderDevice(id) {
@@ -351,23 +415,27 @@ function renderDevice(id) {
   }
   const st = store.getState(), w = whereIs(st, me.id), s = st.devices[d.id], si = statusInfo(s);
   $("#view").innerHTML = `
-    <a class="back" data-nav href="?">← Alle Geräte</a>
+    <a class="back" data-nav href="?">${icon("back")} Studio</a>
     <article class="device">
       <img src="${esc(d.icon)}" alt="Skizze: ${esc(d.name)}" class="device-img">
       <div>
         <h2>${esc(label(d))}</h2>
         <p class="meta">${esc(d.exercise)} · ${esc(d.muscleGroup)}</p>
-        <p class="where">📍 ${esc(d.location)}</p>
+        <p class="where">${icon("pin")} <span>${esc(d.location)}</span></p>
         <p class="pill big ${si.cls}">${si.icon} ${si.text}</p>
         <p>${statusLine(s)} ${esc(typeName(d.type))}: ${waitingText(queueCount(st, d.type))}.</p>
-        ${progressHtml(d, s)}
+        ${s.occupiedBy?.id === me.id ? "" : progressHtml(d, s)}
       </div>
     </article>
     ${flashHtml()}
-    <section class="actions" aria-label="Was möchtest du tun?">${deviceActionsHtml(st, w, d)}</section>
-    ${alternativesHtml(st, w, d.type)}
-    ${queueHtml(st, d.type)}
-    <section class="mapbox"><h3 class="group">Wo steht das Gerät?</h3>${mapSvg(d.id)}</section>
+    <div class="device-grid">
+      <div class="col-left">
+        <section class="actions" aria-label="Was möchtest du tun?">${deviceActionsHtml(st, w, d)}</section>
+        ${alternativesHtml(st, w, d.type)}
+        ${queueHtml(st, d.type)}
+      </div>
+      <div class="col-right"><section class="mapbox"><h3 class="group">Wo steht das Gerät?</h3>${mapSvg(d.id)}</section></div>
+    </div>
     ${simHtml(d, s)}`;
   document.title = `Geräteblick – ${label(d)}`;
 }
@@ -379,8 +447,9 @@ function renderMine() {
   let html = `<h2>Mein Training</h2>${flashHtml()}<h3 class="group">Aktuelles Gerät</h3>`;
   if (cur) {
     const d = devById(cur), s = st.devices[cur];
-    html += `<article class="device"><img src="${esc(d.icon)}" alt="" class="device-img"><div>
-      <h2>${link(cur)}</h2>${progressHtml(d, s)}<section class="actions">${deviceActionsHtml(st, w, d)}</section></div></article>`;
+    html += `<article class="card"><div class="type-head"><img src="${esc(d.icon)}" alt=""><div>
+      <h2>${link(cur)}</h2><span class="meta">${esc(d.location)}</span></div></div>
+      <section class="actions">${deviceActionsHtml(st, w, d)}</section></article>`;
   } else html += `<p class="meta">Du trainierst gerade nicht. Wähle unten ein Gerät oder scanne den QR-Code am Gerät.</p>`;
 
   html += `<h3 class="group">Warteschlange</h3>`;
@@ -467,6 +536,16 @@ function updateClocksOnly() {
     if (!d) return;
     if (kind === "free") el.textContent = approx(msUntilFree(d, r, now));
     else if (kind === "res") el.textContent = mmss(reservationMsLeft(d, now));
+    else if (kind === "ring" || kind === "ringtime" || kind === "ringlabel") {
+      const ph = phase(d, r, now);
+      if (!ph) return;
+      const total = (ph.kind === "rest" ? r.restMinutes : r.setMinutes) * 60_000;
+      if (kind === "ring") {
+        el.setAttribute("stroke-dashoffset", String(314.16 * (1 - Math.max(0, ph.msLeftInPhase) / total)));
+        el.classList.toggle("rest", ph.kind === "rest");
+      } else if (kind === "ringtime") el.textContent = ph.kind === "over" ? "0:00" : mmss(ph.msLeftInPhase);
+      else el.textContent = ph.kind === "rest" ? `Pause bis Satz ${ph.set}` : ph.kind === "set" ? `Satz ${ph.set} von ${d.plannedSets}` : "Satz fertig? Abhaken!";
+    }
     else if (kind === "pres") el.textContent = mmss(presence(d, r, now)?.msLeft ?? 0);
     else if (kind === "phase" || kind === "bar") {
       const ph = phase(d, r, now);
@@ -507,5 +586,11 @@ $("#retry").addEventListener("click", () => {
   if (DATA_URL.includes("nicht-vorhanden")) location.href = location.pathname; else load();
 });
 $("#reset").addEventListener("click", () => store && store.reset());
+// Einführung: einmal beim ersten Besuch, danach über das Etikett „Simulation“.
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-intro]")) $("#intro").showModal();
+  if (e.target.closest("[data-closeintro]")) { $("#intro").close(); try { localStorage.setItem("geraeteblick.introSeen", "1"); } catch { /* egal */ } }
+});
+try { if (!localStorage.getItem("geraeteblick.introSeen") && !params.has("fehler")) $("#intro").showModal(); } catch { /* Speicher gesperrt */ }
 render();
 load();
