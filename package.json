@@ -1,0 +1,12 @@
+{
+  "name": "geraeteblick",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Prototyp Seminararbeit Web Technologie (FOM, WS 2026)",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "qrcode-generator": "1.4.4"
+  }
+}

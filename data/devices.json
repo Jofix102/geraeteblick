@@ -1,0 +1,282 @@
+{
+  "meta": {
+    "version": "0.3",
+    "studioName": "City Fit (fiktiv)",
+    "areaName": "Trainingsfläche",
+    "publicBaseUrl": "https://jofix102.github.io/geraeteblick/",
+    "sourceNote": "Alle Angaben sind eigens erstellte, fiktive Beispieldaten (Geräteauswahl nach Vorgabe von Finn, 06.11.2026). Sie stammen nicht aus einem realen Studio und werden nicht live synchronisiert."
+  },
+  "rules": {
+    "minutesPerSet": 5,
+    "reservationMinutes": 1,
+    "idleMinutes": 20,
+    "maxQueues": 1,
+    "nextQueueAfterPercentSets": 50,
+    "stillThereCheckMinute": 5,
+    "removeWithoutAnswerMinute": 6
+  },
+  "devices": [
+    {
+      "id": "latzug-links",
+      "name": "Latzug",
+      "position": "links",
+      "location": "Rückenbereich, Fensterseite, linkes Gerät",
+      "exercise": "Latzug breit",
+      "muscleGroup": "Rücken",
+      "icon": "assets/latzug.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 1",
+        "plannedSets": 3,
+        "completedSets": 1,
+        "queue": [
+          "Sim-Gast 2"
+        ]
+      }
+    },
+    {
+      "id": "latzug-rechts",
+      "name": "Latzug",
+      "position": "rechts",
+      "location": "Rückenbereich, Fensterseite, rechtes Gerät",
+      "exercise": "Latzug breit",
+      "muscleGroup": "Rücken",
+      "icon": "assets/latzug.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "rudern",
+      "name": "Rudermaschine",
+      "position": null,
+      "location": "Rückenbereich, Mitte",
+      "exercise": "Rudern sitzend",
+      "muscleGroup": "Rücken",
+      "icon": "assets/ruderzug.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 3",
+        "plannedSets": 3,
+        "completedSets": 2,
+        "queue": []
+      }
+    },
+    {
+      "id": "brustpresse-links",
+      "name": "Brustpresse",
+      "position": "links",
+      "location": "Brustbereich, Eingangsseite, linkes Gerät",
+      "exercise": "Brustpresse sitzend",
+      "muscleGroup": "Brust",
+      "icon": "assets/brustpresse.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 4",
+        "plannedSets": 3,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "brustpresse-rechts",
+      "name": "Brustpresse",
+      "position": "rechts",
+      "location": "Brustbereich, Eingangsseite, rechtes Gerät",
+      "exercise": "Brustpresse sitzend",
+      "muscleGroup": "Brust",
+      "icon": "assets/brustpresse.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "butterfly",
+      "name": "Butterfly",
+      "position": null,
+      "location": "Brustbereich, an der Spiegelwand",
+      "exercise": "Butterfly",
+      "muscleGroup": "Brust",
+      "icon": "assets/butterfly.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 5",
+        "plannedSets": 4,
+        "completedSets": 3,
+        "queue": [
+          "Sim-Gast 6"
+        ]
+      }
+    },
+    {
+      "id": "beinpresse",
+      "name": "Beinpresse",
+      "position": null,
+      "location": "Beinbereich, hinten links",
+      "exercise": "Beinpresse",
+      "muscleGroup": "Beine",
+      "icon": "assets/beinpresse.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 7",
+        "plannedSets": 4,
+        "completedSets": 1,
+        "queue": []
+      }
+    },
+    {
+      "id": "legextension-links",
+      "name": "Leg Extension",
+      "position": "links",
+      "location": "Beinbereich, hinten rechts, linkes Gerät",
+      "exercise": "Beinstrecken",
+      "muscleGroup": "Beine",
+      "icon": "assets/legextension.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "legextension-rechts",
+      "name": "Leg Extension",
+      "position": "rechts",
+      "location": "Beinbereich, hinten rechts, rechtes Gerät",
+      "exercise": "Beinstrecken",
+      "muscleGroup": "Beine",
+      "icon": "assets/legextension.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 8",
+        "plannedSets": 3,
+        "completedSets": 2,
+        "queue": []
+      }
+    },
+    {
+      "id": "preacher",
+      "name": "Preacher-Maschine",
+      "position": null,
+      "location": "Armbereich, neben den Kabeltürmen",
+      "exercise": "Bizepscurls an der Preacher-Bank",
+      "muscleGroup": "Bizeps",
+      "icon": "assets/preacher.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "kabelturm-1",
+      "name": "Kabelturm",
+      "position": "1",
+      "location": "Kabelzone an der Rückwand, links außen",
+      "exercise": "frei wählbare Kabelübung",
+      "muscleGroup": "Ganzkörper",
+      "icon": "assets/kabelturm.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "kabelturm-2",
+      "name": "Kabelturm",
+      "position": "2",
+      "location": "Kabelzone an der Rückwand, links",
+      "exercise": "frei wählbare Kabelübung",
+      "muscleGroup": "Ganzkörper",
+      "icon": "assets/kabelturm.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 9",
+        "plannedSets": 3,
+        "completedSets": 1,
+        "queue": []
+      }
+    },
+    {
+      "id": "kabelturm-3",
+      "name": "Kabelturm",
+      "position": "3",
+      "location": "Kabelzone an der Rückwand, Mitte links",
+      "exercise": "frei wählbare Kabelübung",
+      "muscleGroup": "Ganzkörper",
+      "icon": "assets/kabelturm.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "kabelturm-4",
+      "name": "Kabelturm",
+      "position": "4",
+      "location": "Kabelzone an der Rückwand, Mitte rechts",
+      "exercise": "frei wählbare Kabelübung",
+      "muscleGroup": "Ganzkörper",
+      "icon": "assets/kabelturm.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    },
+    {
+      "id": "kabelturm-5",
+      "name": "Kabelturm",
+      "position": "5",
+      "location": "Kabelzone an der Rückwand, rechts",
+      "exercise": "frei wählbare Kabelübung",
+      "muscleGroup": "Ganzkörper",
+      "icon": "assets/kabelturm.svg",
+      "initialState": {
+        "status": "occupied",
+        "occupiedBy": "Sim-Gast 10",
+        "plannedSets": 4,
+        "completedSets": 2,
+        "queue": [
+          "Sim-Gast 11"
+        ]
+      }
+    },
+    {
+      "id": "kabelturm-6",
+      "name": "Kabelturm",
+      "position": "6",
+      "location": "Kabelzone an der Rückwand, rechts außen",
+      "exercise": "frei wählbare Kabelübung",
+      "muscleGroup": "Ganzkörper",
+      "icon": "assets/kabelturm.svg",
+      "initialState": {
+        "status": "free",
+        "occupiedBy": null,
+        "plannedSets": 0,
+        "completedSets": 0,
+        "queue": []
+      }
+    }
+  ]
+}
