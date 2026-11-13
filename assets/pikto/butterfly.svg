@@ -1,5 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Butterfly">
-<g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><rect x="25" y="20" width="14" height="30" rx="3"/><line x1="6" y1="24" x2="12" y2="44"/><line x1="58" y1="24" x2="52" y2="44"/><line x1="32" y1="50" x2="32" y2="58"/></g>
-<g fill="none" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><polyline points="32,21 32,40"/><polyline points="32,25 20,24 12,30"/><polyline points="32,25 44,24 52,30"/><polyline points="30,40 26,44 26,57"/><polyline points="34,40 38,44 38,57"/></g>
-<circle cx="32" cy="13" r="5" fill="#1d1d1f"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="butterfly"><style>.m,.pm{fill:none;stroke:#8e8e93;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.p{fill:none;stroke:#c3c2f4;stroke-width:7;stroke-linecap:round}.pf{fill:#c3c2f4}.f{fill:none;stroke:#5856d6;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.h{fill:#5856d6}</style><rect width="64" height="64" rx="14" fill="#ececfd"/><rect class="pf" x="28" y="16" width="8" height="30" rx="4"/><rect class="pf" x="10" y="12" width="6" height="20" rx="3"/><rect class="pf" x="48" y="12" width="6" height="20" rx="3"/><path class="m" d="M22 52h20M32 52v6"/>
+    <circle class="h" cx="32" cy="12" r="5.5"/><path class="f" d="M32 19v20M32 24H19v-9M32 24h13v-9M32 39l-6 6v13M32 39l6 6v13"/></svg>

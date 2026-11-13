@@ -1,9 +1,10 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.7.0";
-import { createLocalStore } from "./store-local.js?v=0.7.0";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.7.1";
+import { createLocalStore } from "./store-local.js?v=0.7.1";
+import { pikto, hasPikto } from "./pikto.js?v=0.7.1";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence, lastSetBefore
-} from "./queue-logic.js?v=0.7.0";
+} from "./queue-logic.js?v=0.7.1";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -402,9 +403,9 @@ function simHtml(d, s) {
 // Tabs: Jetzt (nächster Schritt + Plan), Geräte (stöbern), Karte. Training läuft als eigener Vollbildschirm.
 const groupsList = () => [...new Set(data.devices.map((d) => d.muscleGroup))];
 const typesOfGroup = (g) => types().filter((t) => devicesOf(t)[0].muscleGroup === g);
-const typePhoto = (type) => data.devices.find((x) => x.type === type).photo || typeIcon(type);
-const isPhoto = (src) => /\.(jpe?g|webp|png)$/i.test(src);
-const media = (src, cls = "") => `<img class="media ${isPhoto(src) ? "photo" : "pikto"} ${cls}" src="${esc(src)}" alt="" loading="lazy">`;
+// Piktogramme als Inline-SVG (Farben aus dem Stylesheet); Datei aus devices.json nur als Rückfall.
+const media = (type, cls = "") => hasPikto(type) ? `<span class="media pikto ${cls}">${pikto(type)}</span>`
+  : `<img class="media pikto ${cls}" src="${esc(typeIcon(type))}" alt="" loading="lazy">`;
 const titleBar = (title, extra = "") => `<header class="largetitle"><div class="lt-top"><span>${esc(data.meta.studioName)}</span><button type="button" class="simchip" data-intro>Simulation</button></div><h1>${title}</h1>${extra}</header>`;
 const section = (title, body, right = "") => `<section class="grp"><div class="grp-head"><h2>${title}</h2>${right}</div>${body}</section>`;
 
@@ -426,19 +427,19 @@ function nowHero(st, w) {
   const r = data.rules;
   if (w.training) {
     const d = devById(w.training), s = st.devices[d.id];
-    return `<a class="hero" data-nav href="?ansicht=training">${media(typePhoto(d.type))}<div class="hero-tx">
+    return `<a class="hero" data-nav href="?ansicht=training">${media(d.type)}<div class="hero-tx">
       <small>Du trainierst</small><h2>${esc(label(d))}</h2><p>${s.completedSets} von ${s.plannedSets} Sätzen · seit ${clock("since", d.id)}</p>
       <span class="pillbtn">Training öffnen</span></div></a>`;
   }
   if (w.reserved) {
     const d = devById(w.reserved);
-    return `<div class="hero">${media(typePhoto(d.type))}<div class="hero-tx"><small>Für dich reserviert</small>
+    return `<div class="hero">${media(d.type)}<div class="hero-tx"><small>Für dich reserviert</small>
       <h2>Geh ${feminine(d.name) ? "zur" : "zum"} ${esc(label(d))}</h2><p>Noch ${clock("res", d.id)} zum Bestätigen</p>
       <button type="button" class="pillbtn" data-showturn>Karte zeigen</button></div></div>`;
   }
   if (w.queued) {
     const t = w.queued.type;
-    return `<div class="hero">${media(typePhoto(t))}<div class="hero-tx"><small>Warteschlange ${esc(typeName(t))}</small>
+    return `<div class="hero">${media(t)}<div class="hero-tx"><small>Warteschlange ${esc(typeName(t))}</small>
       <h2>Nr. ${w.queued.position}</h2><p>dran in ${clock("eta", t, ` data-pos="${w.queued.position}"`)}</p>
       <button type="button" class="pillbtn ghost" data-action="leave" data-ref="${esc(t)}">Verlassen</button></div></div>`;
   }
@@ -446,7 +447,7 @@ function nowHero(st, w) {
   if (next) {
     const free = !!freeDeviceOfType(st, next.type);
     const idx = plan.indexOf(next) + 1;
-    return `<div class="hero">${media(typePhoto(next.type))}<div class="hero-tx"><small>${esc(planName() || "Plan")} · ${idx} von ${plan.length}</small>
+    return `<div class="hero">${media(next.type)}<div class="hero-tx"><small>${esc(planName() || "Plan")} · ${idx} von ${plan.length}</small>
       <h2>${esc(typeName(next.type))} ${free ? "ist frei" : ""}</h2><p>${next.sets} Sätze${free ? "" : ` · Wartezeit ${clock("join", next.type)}`}</p>
       ${planAction(st, w, next).replace(/class="button[^"]*"/, 'class="pillbtn"').replace("Freies Gerät nehmen", "Gerät nehmen")}</div></div>`;
   }
@@ -470,7 +471,7 @@ function planRows(st, w) {
     else status = typeStatus(st, p.type);
     const sub = i === nextIdx && blocked && !queuedHere ? `anstellen ab Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}` : `${p.sets} Sätze`;
     const act = i === nextIdx && !queuedHere && !blocked && (w.training || w.queued || w.reserved) ? `<span class="cell-act">${planAction(st, w, p).replace(/class="button[^"]*"/, 'class="mini"')}</span>` : "";
-    return `<li class="cell${p.done ? " done" : ""}"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, p.type))}">${media(typeIcon(p.type), "thumb")}
+    return `<li class="cell${p.done ? " done" : ""}"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, p.type))}">${media(p.type, "thumb")}
       <span class="cell-tx"><b>${esc(typeName(p.type))}</b><span>${sub}</span></span><span class="cell-r">${status}</span></a>${act}</li>`;
   }).join("")}</ul>`;
 }
@@ -489,7 +490,7 @@ function renderNow() {
 function planCards() {
   return plans().map((p) => `<button type="button" class="plan-card${p.id === planId ? " current" : ""}" data-plan="choose:${p.id}">
     <span class="pc-tx"><b>${esc(p.name)}</b><span>${p.items.length} Übungen · ${p.items.reduce((a, i) => a + i.sets, 0)} Sätze</span></span>
-    <span class="plan-pics">${p.items.map((i) => media(typeIcon(i.type), "mini-pic")).join("")}</span></button>`).join("");
+    <span class="plan-pics">${p.items.map((i) => media(i.type, "mini-pic")).join("")}</span></button>`).join("");
 }
 function renderPlanEditor() {
   $("#plan").innerHTML = `<h2>Plan wählen</h2>
@@ -507,10 +508,10 @@ function renderDevices(filter) {
     const free = devs.filter((d) => st.devices[d.id].status === "free").length;
     const on = g === filter;
     return `<a class="gtile${on ? " on" : ""}" data-nav href="${on ? "?ansicht=geraete" : `?gruppe=${encodeURIComponent(g)}`}" aria-pressed="${on}">
-      ${media(typePhoto(typesOfGroup(g)[0]))}<span class="gt-tx"><b>${esc(g)}</b><span>${free ? `${free} von ${devs.length} frei` : "alle belegt"}</span></span></a>`;
+      ${media(typesOfGroup(g)[0])}<span class="gt-tx"><b>${esc(g)}</b><span>${free ? `${free} von ${devs.length} frei` : "alle belegt"}</span></span></a>`;
   }).join("");
   const groups = (filter ? [filter] : groupsList()).map((g) => section(esc(g), `<ul class="list">${typesOfGroup(g).map((t) =>
-    `<li class="cell"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, t))}">${media(typeIcon(t), "thumb")}
+    `<li class="cell"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, t))}">${media(t, "thumb")}
       <span class="cell-tx"><b>${esc(typeName(t))}</b><span>${typeSub(st, t)}</span></span><span class="cell-r">${typeStatus(st, t)}<span class="chev" aria-hidden="true">›</span></span></a></li>`).join("")}</ul>`)).join("");
   $("#view").innerHTML = titleBar("Geräte") + flashHtml() + `<nav class="scroller" aria-label="Muskelgruppen">${tiles}</nav>` + groups;
   document.title = "Geräteblick – Geräte";
@@ -540,7 +541,7 @@ function renderDevice(id) {
   if (s.occupiedBy?.id === me.id) return navigate("?ansicht=training");
   const q = queueCount(st, d.type);
   $("#view").innerHTML = `
-    <div class="devhead">${media(typePhoto(d.type))}<a class="backbtn" data-nav href="?gruppe=${encodeURIComponent(d.muscleGroup)}" aria-label="Zurück zu ${esc(d.muscleGroup)}">${icon("back")}</a></div>
+    <div class="devhead">${media(d.type)}<a class="backbtn" data-nav href="?gruppe=${encodeURIComponent(d.muscleGroup)}" aria-label="Zurück zu ${esc(d.muscleGroup)}">${icon("back")}</a></div>
     <div class="devinfo"><h1>${esc(label(d))}</h1><p class="sub">${esc(d.exercise)}</p>
       <p class="statusline"><span class="st ${si.cls === "free" ? "ok" : si.cls === "busy" ? "bad" : "warn"}">${si.text}</span>${q ? ` · ${q} ${q === 1 ? "wartet" : "warten"}` : ""}</p>
       ${progressHtml(d, s)}</div>
@@ -566,8 +567,8 @@ function renderTraining() {
   const next = plan.find((p) => !p.done && p.type !== d.type);
   const blocked = !trainingFarEnough(s, r);
   let nextHtml = "";
-  if (w.queued) nextHtml = `<div class="nx">${media(typeIcon(w.queued.type), "thumb")}<span class="cell-tx"><b>Als Nächstes: ${esc(typeName(w.queued.type))}</b><span>Nr. ${w.queued.position} in der Schlange</span></span><span class="nx-r">${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}</span></div>`;
-  else if (next) nextHtml = `<div class="nx">${media(typeIcon(next.type), "thumb")}<span class="cell-tx"><b>Als Nächstes: ${esc(typeName(next.type))}</b><span>${blocked ? `anstellen ab Satz ${Math.floor(s.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}` : `${next.sets} Sätze`}</span></span>
+  if (w.queued) nextHtml = `<div class="nx">${media(w.queued.type, "thumb")}<span class="cell-tx"><b>Als Nächstes: ${esc(typeName(w.queued.type))}</b><span>Nr. ${w.queued.position} in der Schlange</span></span><span class="nx-r">${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}</span></div>`;
+  else if (next) nextHtml = `<div class="nx">${media(next.type, "thumb")}<span class="cell-tx"><b>Als Nächstes: ${esc(typeName(next.type))}</b><span>${blocked ? `anstellen ab Satz ${Math.floor(s.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}` : `${next.sets} Sätze`}</span></span>
       ${blocked ? `<span class="nx-r">${clock("join", next.type)}</span>` : `<span class="nx-r">${planAction(st, w, next).replace(/class="button[^"]*"/, 'class="mini"')}</span>`}</div>`;
   $("#view").innerHTML = `
     <div class="live-top"><a class="livex" data-nav href="?" aria-label="Zur Übersicht">${icon("back")}</a><span>${ctx}</span></div>

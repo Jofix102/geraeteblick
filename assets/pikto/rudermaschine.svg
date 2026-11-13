@@ -1,5 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Rudermaschine">
-<g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="56" x2="58" y2="56"/><rect x="50" y="12" width="8" height="44" rx="1.5"/><line x1="50" y1="34" x2="42" y2="34"/><line x1="42" y1="30" x2="42" y2="38"/><line x1="12" y1="48" x2="28" y2="48"/><line x1="46" y1="42" x2="48" y2="54"/></g>
-<g fill="none" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,30 21,46"/><polyline points="20,32 31,37 40,34"/><polyline points="21,46 34,42 45,47"/></g>
-<circle cx="19" cy="24" r="4.5" fill="#1d1d1f"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="rudermaschine"><style>.m,.pm{fill:none;stroke:#8e8e93;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.p{fill:none;stroke:#c3c2f4;stroke-width:7;stroke-linecap:round}.pf{fill:#c3c2f4}.f{fill:none;stroke:#5856d6;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.h{fill:#5856d6}</style><rect width="64" height="64" rx="14" fill="#ececfd"/><path class="m" d="M6 55h52M44 36h9"/><rect class="pf" x="15" y="44" width="16" height="6" rx="3"/><rect class="pf" x="50" y="28" width="6" height="20" rx="3"/>
+    <circle class="h" cx="22" cy="20" r="5.5"/><path class="f" d="M22 27v17M22 44l13-6 14 7M22 31l11 5h10"/></svg>

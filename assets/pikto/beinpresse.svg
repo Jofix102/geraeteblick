@@ -1,5 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Beinpresse">
-<g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="58" x2="58" y2="20"/><line x1="8" y1="40" x2="22" y2="56"/><line x1="44" y1="12" x2="56" y2="30"/></g>
-<g fill="none" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16,40 27,49"/><polyline points="27,49 36,36 48,22"/></g>
-<circle cx="12" cy="35" r="4.5" fill="#1d1d1f"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="beinpresse"><style>.m,.pm{fill:none;stroke:#8e8e93;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.p{fill:none;stroke:#c3c2f4;stroke-width:7;stroke-linecap:round}.pf{fill:#c3c2f4}.f{fill:none;stroke:#5856d6;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.h{fill:#5856d6}</style><rect width="64" height="64" rx="14" fill="#ececfd"/><path class="m" d="M14 58l44-34"/><path class="p" d="M8 45l12 10M44 12l12 16"/>
+    <circle class="h" cx="10" cy="36" r="5.5"/><path class="f" d="M14 42l11 9M25 51l9-13 14-13M17 45l5 9"/></svg>

@@ -1,5 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Kabelturm">
-<g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><rect x="46" y="4" width="12" height="56" rx="1.5"/><circle cx="46" cy="20" r="2.5"/><line x1="46" y1="20" x2="35" y2="29"/></g>
-<g fill="none" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,18 22,39"/><polyline points="22,23 29,29 34,30"/><polyline points="22,39 17,58"/><polyline points="22,39 28,58"/></g>
-<circle cx="22" cy="11" r="4.5" fill="#1d1d1f"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="kabelturm"><style>.m,.pm{fill:none;stroke:#8e8e93;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.p{fill:none;stroke:#c3c2f4;stroke-width:7;stroke-linecap:round}.pf{fill:#c3c2f4}.f{fill:none;stroke:#5856d6;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.h{fill:#5856d6}</style><rect width="64" height="64" rx="14" fill="#ececfd"/><rect class="pm" x="46" y="6" width="12" height="52" rx="4"/><circle class="m" cx="46" cy="22" r="3"/><path class="m" d="M44 23l-8 7"/>
+    <circle class="h" cx="22" cy="12" r="5.5"/><path class="f" d="M22 19v19M22 38l-6 20M22 38l6 20M22 25l8 5h6"/></svg>

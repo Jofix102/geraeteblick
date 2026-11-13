@@ -1,5 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Preacher-Maschine">
-<g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="28" y1="30" x2="46" y2="46"/><line x1="38" y1="40" x2="38" y2="58"/><line x1="12" y1="48" x2="26" y2="48"/><line x1="36" y1="22" x2="46" y2="26"/></g>
-<g fill="none" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><polyline points="19,24 20,45"/><polyline points="21,28 34,38 41,25"/><polyline points="20,45 30,47 30,57"/></g>
-<circle cx="18" cy="17" r="4.5" fill="#1d1d1f"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="preacher"><style>.m,.pm{fill:none;stroke:#8e8e93;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.p{fill:none;stroke:#c3c2f4;stroke-width:7;stroke-linecap:round}.pf{fill:#c3c2f4}.f{fill:none;stroke:#5856d6;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.h{fill:#5856d6}</style><rect width="64" height="64" rx="14" fill="#ececfd"/><rect class="pf" x="6" y="45" width="18" height="6" rx="3"/><path class="m" d="M15 51v7M38 50v8M33 24h10"/><path class="p" d="M26 36l12 11"/>
+    <circle class="h" cx="19" cy="19" r="5.5"/><path class="f" d="M19 26l-1 19h10v13M20 30l14 10 4-15"/></svg>

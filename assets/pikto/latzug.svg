@@ -1,5 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Latzug">
-<g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="8" y2="58"/><line x1="8" y1="6" x2="48" y2="6"/><line x1="33" y1="6" x2="33" y2="11"/><line x1="16" y1="12" x2="50" y2="12"/><line x1="20" y1="47" x2="38" y2="47"/><line x1="38" y1="38" x2="46" y2="38"/></g>
-<g fill="none" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><polyline points="33,31 32,45"/><polyline points="32,45 44,44 44,57"/><polyline points="33,31 24,24 20,13"/><polyline points="33,31 42,24 46,13"/></g>
-<circle cx="33" cy="23" r="4.5" fill="#1d1d1f"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="latzug"><style>.m,.pm{fill:none;stroke:#8e8e93;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}.p{fill:none;stroke:#c3c2f4;stroke-width:7;stroke-linecap:round}.pf{fill:#c3c2f4}.f{fill:none;stroke:#5856d6;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.h{fill:#5856d6}</style><rect width="64" height="64" rx="14" fill="#ececfd"/><path class="m" d="M10 56V9h40M34 9v6"/><path class="p" d="M18 13h32"/><rect class="pf" x="22" y="43" width="20" height="6" rx="3"/><rect class="pf" x="38" y="34" width="10" height="5" rx="2.5"/>
+    <circle class="h" cx="34" cy="25" r="5.5"/><path class="f" d="M34 32l-1 11h10v13M34 33l-9-7-3-11M34 33l9-7 3-11"/></svg>
