@@ -56,6 +56,7 @@ main{max-width:720px;margin:0 auto;padding:0 0 8px}
 .pk .p{fill:none;stroke:var(--pad);stroke-width:7;stroke-linecap:round}
 .pk .pf{fill:var(--pad)}
 .pk .f{fill:none;stroke:var(--fig);stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.pk .t{stroke-width:12}.pk .l{stroke-width:8}.pk .a{stroke-width:5.5}
 .pk .h{fill:var(--fig)}
 .media.pikto{object-fit:contain;padding:4px}
 .thumb{width:46px;height:46px;border-radius:10px;flex:none}
@@ -223,3 +224,28 @@ body.live .flash{background:#1c1c1e}
 .foot{max-width:720px;margin:28px auto 0;padding:0 32px 16px;color:var(--sec);font-size:13px;line-height:1.6}
 .foot a,.foot .linklike{color:var(--sec);text-decoration:underline;font-size:13px}
 .badge,.st{white-space:nowrap}
+
+/* ---------- v0.7.2: der „blaue Faden“ und mehr Mensch ---------- */
+.lead{font-size:17px;color:var(--sec);margin-top:2px}
+.trail{margin-top:12px}
+.trail-bar{display:flex;gap:4px}
+.trail-bar i{flex:1;height:6px;border-radius:9px;background:var(--sep)}
+.trail-bar i.d{background:var(--acc)}
+.trail-bar i.c{background:linear-gradient(90deg,var(--acc) 0 40%,var(--sep) 40%)}
+.trail-tx{display:block;font-size:13px;color:var(--acc-text);font-weight:600;margin-top:6px}
+.trail.dark{margin:14px 16px 0}.trail.dark .trail-bar i{background:#2c2c2e}.trail.dark .trail-bar i.d{background:#5e5ce6}
+.trail.dark .trail-bar i.c{background:linear-gradient(90deg,#5e5ce6 0 40%,#2c2c2e 40%)}.trail.dark .trail-tx{color:#a9a7ff}
+.devinfo .trail{margin:0 0 10px}
+/* Plan als Zeitleiste: eine Linie in Akzentfarbe verbindet die Übungen */
+.timeline .cell{padding-left:30px}
+.timeline .cell::after{content:"";position:absolute;left:20px;top:0;bottom:0;width:2px;background:var(--sep)}
+.timeline .cell.done::after{background:var(--acc)}
+.timeline .cell:first-child::after{top:50%}.timeline .cell:last-child::after{bottom:50%}
+.timeline .cell+.cell::before{left:104px}
+.node{position:absolute;left:12px;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:50%;background:var(--card);border:2px solid var(--sep);z-index:1;display:grid;place-items:center}
+.cell.done .node{background:var(--acc);border-color:var(--acc);color:#fff}
+.node .ico{width:12px;height:12px}
+.cell.now .node{border-color:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 22%,transparent)}
+.cell.done{opacity:.7}
+.timeline .cell-main{padding-left:10px}
+.trail.dark .trail-tx{display:none}

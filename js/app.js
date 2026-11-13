@@ -1,10 +1,10 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.7.1";
-import { createLocalStore } from "./store-local.js?v=0.7.1";
-import { pikto, hasPikto } from "./pikto.js?v=0.7.1";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.7.2";
+import { createLocalStore } from "./store-local.js?v=0.7.2";
+import { pikto, hasPikto } from "./pikto.js?v=0.7.2";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence, lastSetBefore
-} from "./queue-logic.js?v=0.7.1";
+} from "./queue-logic.js?v=0.7.2";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -197,6 +197,17 @@ const DONE = {
   "start-keep": "Training gestartet. Dein Platz in der Warteschlange bleibt.", finish: "Gerät freigegeben.",
   sim: "Simulation: Sim-Gast ist weiter.", set: "Satz abgehakt. Jetzt Pause.", here: "Danke, du bleibst angemeldet."
 };
+// Menschlicher Ton: kurze, ermutigende Rückmeldung nach jedem Satz.
+function setText(id) {
+  const d = store.getState().devices[id], left = d.plannedSets - d.completedSets;
+  const cheer = ["Stark!", "Sauber!", "Gut gemacht!", "Weiter so!"][d.completedSets % 4];
+  return `${cheer} Noch ${left === 1 ? "ein Satz" : `${left} Sätze`}. Gönn dir die Pause.`;
+}
+function doneText(type) {
+  const next = plan.find((p) => !p.done);
+  if (plan.length && !next) return "Geschafft! Dein ganzer Plan ist erledigt. Starke Leistung!";
+  return next ? `Übung geschafft! Als Nächstes: ${typeName(next.type)}.` : "Übung geschafft! Das Gerät ist frei für den Nächsten.";
+}
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-action]");
   if (!b || !store) return;
@@ -207,7 +218,7 @@ document.addEventListener("click", (e) => {
   const trainingType = before.training ? store.getState().devices[before.training].type : null;
   const result = ACTIONS[b.dataset.action](b.dataset.ref);
   if (result.ok && result.code === "done" && trainingType) markPlanDone(trainingType);
-  flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? "Letzter Satz geschafft. Das Gerät ist frei für den Nächsten." : DONE[b.dataset.action] };
+  flash = { ok: result.ok, text: !result.ok ? result.text : result.code === "done" ? doneText(trainingType) : b.dataset.action === "set" ? setText(b.dataset.ref) : DONE[b.dataset.action] };
   if (result.ok && b.dataset.go) return navigate(b.dataset.go);
   render();
 });
@@ -407,6 +418,18 @@ const typesOfGroup = (g) => types().filter((t) => devicesOf(t)[0].muscleGroup ==
 const media = (type, cls = "") => hasPikto(type) ? `<span class="media pikto ${cls}">${pikto(type)}</span>`
   : `<img class="media pikto ${cls}" src="${esc(typeIcon(type))}" alt="" loading="lazy">`;
 const titleBar = (title, extra = "") => `<header class="largetitle"><div class="lt-top"><span>${esc(data.meta.studioName)}</span><button type="button" class="simchip" data-intro>Simulation</button></div><h1>${title}</h1>${extra}</header>`;
+// Der „blaue Faden“: Fortschritt im Plan, gleich dargestellt auf Jetzt, Gerät und Training.
+function trail(type, dark = false) {
+  if (!plan.length) return "";
+  const cur = plan.findIndex((p) => !p.done && (!type || p.type === type));
+  const segs = plan.map((p, i) => `<i class="${p.done ? "d" : i === cur ? "c" : ""}"></i>`).join("");
+  const done = plan.filter((p) => p.done).length;
+  return `<div class="trail${dark ? " dark" : ""}" role="img" aria-label="${esc(planName())}: ${done} von ${plan.length} Übungen erledigt"><span class="trail-bar">${segs}</span><span class="trail-tx">${esc(planName())} · ${done} von ${plan.length} geschafft</span></div>`;
+}
+function greet() {
+  const h = new Date().getHours();
+  return h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend";
+}
 const section = (title, body, right = "") => `<section class="grp"><div class="grp-head"><h2>${title}</h2>${right}</div>${body}</section>`;
 
 // Status eines Gerätetyps als kurzer Text mit Farbe (nie nur Farbe, vgl. HIG „Inclusive color“).
@@ -461,7 +484,8 @@ function planRows(st, w) {
   const r = data.rules, train = w.training ? st.devices[w.training] : null;
   const blocked = train && !trainingFarEnough(train, r);
   const nextIdx = plan.findIndex((p) => !p.done && p.type !== train?.type && p.type !== (w.reserved && st.devices[w.reserved].type));
-  return `<ul class="list">${plan.map((p, i) => {
+  const curIdx = plan.findIndex((p) => !p.done);
+  return `<ul class="list timeline">${plan.map((p, i) => {
     const isCur = train?.type === p.type && !p.done && i === plan.findIndex((x) => !x.done && x.type === p.type);
     const queuedHere = w.queued?.type === p.type;
     let status;
@@ -471,7 +495,8 @@ function planRows(st, w) {
     else status = typeStatus(st, p.type);
     const sub = i === nextIdx && blocked && !queuedHere ? `anstellen ab Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}` : `${p.sets} Sätze`;
     const act = i === nextIdx && !queuedHere && !blocked && (w.training || w.queued || w.reserved) ? `<span class="cell-act">${planAction(st, w, p).replace(/class="button[^"]*"/, 'class="mini"')}</span>` : "";
-    return `<li class="cell${p.done ? " done" : ""}"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, p.type))}">${media(p.type, "thumb")}
+    const node = p.done ? "done" : i === curIdx ? "now" : "todo";
+    return `<li class="cell ${node}${p.done ? " done" : ""}"><span class="node" aria-hidden="true">${p.done ? icon("check") : ""}</span><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, p.type))}">${media(p.type, "thumb")}
       <span class="cell-tx"><b>${esc(typeName(p.type))}</b><span>${sub}</span></span><span class="cell-r">${status}</span></a>${act}</li>`;
   }).join("")}</ul>`;
 }
@@ -479,7 +504,8 @@ function planRows(st, w) {
 function renderNow() {
   const st = store.getState(), w = whereIs(st, me.id);
   const free = data.devices.filter((d) => st.devices[d.id].status === "free").length, all = data.devices.length;
-  let html = titleBar("Jetzt") + flashHtml() + nowHero(st, w);
+  const lead = w.training ? "Du bist mitten im Training. Weiter so!" : w.reserved ? "Dein Gerät wartet auf dich." : w.queued ? "Du stehst an. Wir sagen dir Bescheid." : plan.length && plan.every((p) => p.done) ? "Starkes Training heute!" : plan.length ? "Bereit für die nächste Übung?" : "Was trainierst du heute?";
+  let html = titleBar(`${greet()}!`, `<p class="lead">${lead}</p>${trail()}`) + flashHtml() + nowHero(st, w);
   html += section("Im Studio", `<div class="card load"><span class="n">${free}</span><span class="load-bar"><i><b style="width:${(free / all) * 100}%"></b></i><span>von ${all} Geräten frei</span></span></div>`);
   if (plan.length) html += section(esc(planName() || "Dein Plan"), planRows(st, w), `<button type="button" class="textbtn" data-plan="open">Wechseln</button>`);
   else html += section("Plan wählen", `<div class="plan-choice">${planCards()}</div>`);
@@ -542,7 +568,7 @@ function renderDevice(id) {
   const q = queueCount(st, d.type);
   $("#view").innerHTML = `
     <div class="devhead">${media(d.type)}<a class="backbtn" data-nav href="?gruppe=${encodeURIComponent(d.muscleGroup)}" aria-label="Zurück zu ${esc(d.muscleGroup)}">${icon("back")}</a></div>
-    <div class="devinfo"><h1>${esc(label(d))}</h1><p class="sub">${esc(d.exercise)}</p>
+    <div class="devinfo">${plan.some((p) => p.type === d.type && !p.done) ? trail(d.type) : ""}<h1>${esc(label(d))}</h1><p class="sub">${esc(d.exercise)}</p>
       <p class="statusline"><span class="st ${si.cls === "free" ? "ok" : si.cls === "busy" ? "bad" : "warn"}">${si.text}</span>${q ? ` · ${q} ${q === 1 ? "wartet" : "warten"}` : ""}</p>
       ${progressHtml(d, s)}</div>
     ${flashHtml()}
@@ -571,7 +597,7 @@ function renderTraining() {
   else if (next) nextHtml = `<div class="nx">${media(next.type, "thumb")}<span class="cell-tx"><b>Als Nächstes: ${esc(typeName(next.type))}</b><span>${blocked ? `anstellen ab Satz ${Math.floor(s.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}` : `${next.sets} Sätze`}</span></span>
       ${blocked ? `<span class="nx-r">${clock("join", next.type)}</span>` : `<span class="nx-r">${planAction(st, w, next).replace(/class="button[^"]*"/, 'class="mini"')}</span>`}</div>`;
   $("#view").innerHTML = `
-    <div class="live-top"><a class="livex" data-nav href="?" aria-label="Zur Übersicht">${icon("back")}</a><span>${ctx}</span></div>
+    <div class="live-top"><a class="livex" data-nav href="?" aria-label="Zur Übersicht">${icon("back")}</a><span>${ctx}</span></div>${trail(d.type, true)}
     <h1 class="live-title">${esc(label(d))}</h1><p class="live-sub">${esc(d.location)}</p>
     ${flashHtml()}
     ${ask ? `<div class="askcard"><b>Bist du noch da?</b> Sonst wirst du in ${clock("pres", d.id)} abgemeldet. ${btn("here", d.id, "Ja, bin noch da", true)}</div>` : ""}
