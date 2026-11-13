@@ -8,3 +8,6 @@
 
 ## Trainingspläne (`plans` in data/devices.json)
 Drei feste Beispielpläne (Oberkörper-, Unterkörper-, Ganzkörper-Tag), am 06.11.2026 nach Vorgabe von Finn aus den simulierten Geräten zusammengestellt. Keine Trainingsempfehlung, keine externe Quelle.
+
+## Gestaltung ab v0.7 (13.11.2026)
+Aufbau und Stil angelehnt an die Apple Human Interface Guidelines (https://developer.apple.com/design/human-interface-guidelines/, Seiten Tab bars, Layout, Typography, Color, Images, Lists and tables; gelesen am 13.11.2026). Es werden keine Apple-Dateien, Schriften oder Symbole verwendet; die Schrift ist die Systemschrift des Geräts. Piktogramme: eigene Zeichnungen (assets/pikto/).

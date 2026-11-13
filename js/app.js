@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.6.2";
-import { createLocalStore } from "./store-local.js?v=0.6.2";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.7.0";
+import { createLocalStore } from "./store-local.js?v=0.7.0";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence, lastSetBefore
-} from "./queue-logic.js?v=0.6.2";
+} from "./queue-logic.js?v=0.7.0";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -115,9 +115,9 @@ function renderBar() {
   soonShownFor = soon || null;
   // Auf „Mein Training“ und auf der eigenen Geräteseite steht das schon groß da: Leiste dort knapp halten.
   const q = new URLSearchParams(location.search);
-  const onMine = q.get("ansicht") === "ich", onDev = q.get("geraet");
-  if (w.training && !onMine && onDev !== w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?ansicht=ich">Öffnen</a></p>`);
-  if (w.queued && !onMine) parts.push(`<p class="bar-line">Du bist <b>Nr. ${w.queued.position}</b> ${anType(w.queued.type)} <b>${esc(typeName(w.queued.type))}</b>, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)} <a data-nav href="?ansicht=ich">Ansehen</a> <button type="button" class="linklike" data-action="leave" data-ref="${esc(w.queued.type)}">Verlassen</button></p>`);
+  const onMine = ["ich", "training", null].includes(q.get("ansicht")) && !q.has("geraet") && !q.has("gruppe"), onDev = q.get("geraet");
+  if (w.training && !onMine && onDev !== w.training) parts.push(`<p class="bar-line">Du trainierst ${an(w.training)} <b>${esc(label(devById(w.training)))}</b>: ${clock("phase", w.training)}. <a data-nav href="?ansicht=training">Öffnen</a></p>`);
+  if (w.queued && !onMine) parts.push(`<p class="bar-line">Du bist <b>Nr. ${w.queued.position}</b> ${anType(w.queued.type)} <b>${esc(typeName(w.queued.type))}</b>, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)} <a data-nav href="?">Ansehen</a> <button type="button" class="linklike" data-action="leave" data-ref="${esc(w.queued.type)}">Verlassen</button></p>`);
   bar.innerHTML = parts.join("");
   bar.hidden = parts.length === 0;
   renderTurn(st, w);
@@ -140,7 +140,7 @@ function renderTurn(st, w) {
     <p>Das Gerät ist für dich reserviert. Bestätige innerhalb von <b>${clock("res", d.id)}</b>, sobald du angekommen bist.</p>
     ${mapSvg(d.id)}
     <p class="meta">${n} ${n === 1 ? "Satz" : "Sätze"}</p>
-    <div class="actions">${btn("start", d.id, arrive, true, "?ansicht=ich", false)}
+    <div class="actions">${btn("start", d.id, arrive, true, "?ansicht=training", false)}
     ${btn("finish", d.id, direct ? "Abbrechen" : "Platz freigeben")}</div>`;
   if (turnShownFor !== w.reserved) {
     turnShownFor = w.reserved;
@@ -249,15 +249,18 @@ function render() {
   renderBar();
   const q = new URLSearchParams(location.search);
   const v = q.get("ansicht");
-  const tab = q.has("geraet") ? "" : v === "qr" ? "qr" : v === "ich" ? "ich" : v === "karte" ? "karte" : "studio";
+  const live = v === "training";
+  const tab = live ? "" : q.has("geraet") || q.has("gruppe") || v === "geraete" ? "geraete" : v === "qr" ? "qr" : v === "karte" ? "karte" : "jetzt";
+  document.body.classList.toggle("live", live);
   document.querySelectorAll("[data-tab]").forEach((t) => t.setAttribute("aria-current", String(t.dataset.tab === tab)));
   if (!data) return;
-  if (q.has("geraet")) renderDevice(q.get("geraet"));
-  else if (q.has("gruppe")) renderGroup(q.get("gruppe"));
+  if (live) renderTraining();
+  else if (q.has("geraet")) renderDevice(q.get("geraet"));
+  else if (q.has("gruppe")) renderDevices(q.get("gruppe"));
+  else if (v === "geraete") renderDevices("");
   else if (tab === "qr") renderQr();
-  else if (tab === "ich") renderMine();
   else if (tab === "karte") renderMap();
-  else renderList();
+  else renderNow();
   fillClocksSoon();
 }
 
@@ -372,7 +375,7 @@ function deviceActionsHtml(st, w, d) {
     </div>`;
   if (s.reservedFor?.id === me.id)
     return `<p><b>Für dich reserviert.</b> Noch ${clock("res", d.id)} Zeit, deine Ankunft zu bestätigen.</p>
-      ${btn("start", d.id, "Ich bin da, Training starten", true, "", false)} ${btn("finish", d.id, "Platz freigeben")}`;
+      ${btn("start", d.id, "Ich bin da, Training starten", true, "?ansicht=training", false)} ${btn("finish", d.id, "Platz freigeben")}`;
   if (isCompletelyFree(st, d.id)) {
     if (w.training) return `<p>Du trainierst gerade ${an(w.training)} ${link(w.training)}. Beende dort zuerst dein Training.</p>`;
     if (w.queued) return `<p>Das Gerät ist frei. Du stehst ${anType(w.queued.type)} ${esc(typeName(w.queued.type))} an (Nr. ${w.queued.position}, dran in ${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}).</p>
@@ -395,159 +398,198 @@ function simHtml(d, s) {
   return sim ? `<p class="simctl">Simulation: ${btn("sim", d.id, sim)}</p>` : "";
 }
 
-// ---------- Ansichten ----------
-// Startseite „Studio“: oben dein Stand bzw. die Auslastung, darunter Muskelgruppen zum Aufklappen.
-const openGroups = new Set();
-document.addEventListener("toggle", (e) => {
-  if (!e.target.matches?.("details[data-group]")) return;
-  e.target.open ? openGroups.add(e.target.dataset.group) : openGroups.delete(e.target.dataset.group);
-}, true);
-
-function heroHtml(st, w) {
-  const free = data.devices.filter((d) => st.devices[d.id].status === "free").length;
-  if (w.training) return `<a class="hero" data-nav href="?ansicht=ich"><span class="meta">Du trainierst</span><b class="hero-title">${esc(label(devById(w.training)))}</b><span class="big">${clock("phase", w.training)}</span></a>`;
-  if (w.queued) return `<a class="hero" data-nav href="?ansicht=ich"><span class="meta">${esc(typeName(w.queued.type))}</span><span class="big">Nr. ${w.queued.position}<small>${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}</small></span></a>`;
-  return `<section class="hero"><span class="big">${free}<small>/ ${data.devices.length} frei</small></span></section>`;
-}
-
+// ---------- Ansichten (v0.7, Aufbau nach Apple Human Interface Guidelines) ----------
+// Tabs: Jetzt (nächster Schritt + Plan), Geräte (stöbern), Karte. Training läuft als eigener Vollbildschirm.
 const groupsList = () => [...new Set(data.devices.map((d) => d.muscleGroup))];
 const typesOfGroup = (g) => types().filter((t) => devicesOf(t)[0].muscleGroup === g);
+const typePhoto = (type) => data.devices.find((x) => x.type === type).photo || typeIcon(type);
+const isPhoto = (src) => /\.(jpe?g|webp|png)$/i.test(src);
+const media = (src, cls = "") => `<img class="media ${isPhoto(src) ? "photo" : "pikto"} ${cls}" src="${esc(src)}" alt="" loading="lazy">`;
+const titleBar = (title, extra = "") => `<header class="largetitle"><div class="lt-top"><span>${esc(data.meta.studioName)}</span><button type="button" class="simchip" data-intro>Simulation</button></div><h1>${title}</h1>${extra}</header>`;
+const section = (title, body, right = "") => `<section class="grp"><div class="grp-head"><h2>${title}</h2>${right}</div>${body}</section>`;
 
-function renderList() {
-  const st = store.getState(), w = whereIs(st, me.id);
-  const tile = (g) => {
-    const devs = data.devices.filter((d) => d.muscleGroup === g);
-    const count = (status) => devs.filter((d) => st.devices[d.id].status === status).length;
-    const free = count("free"), busy = count("occupied"), ready = count("reserved");
-    const pct = (n) => `${(n / devs.length) * 100}%`;
-    return `<li><a class="tile" data-nav href="?gruppe=${encodeURIComponent(g)}">
-      <img class="pic" src="${esc(typeIcon(typesOfGroup(g)[0]))}" alt="">
-      <b>${esc(g)}</b>
-      <span class="badge ${free ? "free" : "wait"}">${free}/${devs.length} frei</span>
-      <span class="gauge" aria-hidden="true"><span class="g-busy" style="width:${pct(busy)}"></span><span class="g-ready" style="width:${pct(ready)}"></span><span class="g-free" style="width:${pct(free)}"></span></span>
-    </a></li>`;
-  };
-  $("#view").innerHTML = `${heroHtml(st, w)}${flashHtml()}<ul class="tiles">${groupsList().map(tile).join("")}</ul>`;
-  document.title = "Geräteblick – Studio";
+// Status eines Gerätetyps als kurzer Text mit Farbe (nie nur Farbe, vgl. HIG „Inclusive color“).
+function typeStatus(st, type) {
+  const devs = devicesOf(type), free = devs.filter((d) => st.devices[d.id].status === "free").length;
+  if (freeDeviceOfType(st, type)) return `<span class="st ok">${devs.length > 1 ? `${free} frei` : "frei"}</span>`;
+  return `<span class="st warn">${clock("join", type)}</span>`;
 }
-
-function renderGroup(g) {
-  if (!groupsList().includes(g)) return navigate("?");
-  const st = store.getState(), w = whereIs(st, me.id);
-  $("#view").innerHTML = `<a class="back" data-nav href="?">${icon("back")} Studio</a><h2>${esc(g)}</h2>${flashHtml()}
-    <ul class="types">${typesOfGroup(g).map((t) => typeCard(st, w, t)).join("")}</ul>`;
-  document.title = `Geräteblick – ${g}`;
+function typeSub(st, type) {
+  const n = devicesOf(type).length, q = queueCount(st, type);
+  return `${n} ${n === 1 ? "Gerät" : "Geräte"}${q ? ` · ${q} ${q === 1 ? "wartet" : "warten"}` : ""}`;
 }
+// Ziel beim Antippen eines Typs: ein freies Gerät, sonst das erste.
+const typeTarget = (st, type) => (devicesOf(type).find((d) => st.devices[d.id].status === "free") || devicesOf(type)[0]).id;
 
-function renderMap() {
-  const st = store.getState(), w = whereIs(st, me.id);
-  const mine = w.reserved || w.training || null;
-  $("#view").innerHTML = `<h2>Karte</h2>
-    <p class="meta">Tippe ein Gerät an, um es zu öffnen.</p>
-    ${mapSvg(mine, true)}
-    <p class="legend"><span><i style="background:var(--ok)"></i>frei</span><span><i style="background:var(--busy)"></i>belegt</span><span><i style="background:var(--ready)"></i>reserviert</span>${mine ? `<span><i style="background:var(--accent)"></i>dein Gerät</span>` : ""}</p>`;
-  document.title = "Geräteblick – Karte";
-}
-
-function renderDevice(id) {
-  const d = devById(id);
-  if (!d) {
-    $("#view").innerHTML = `
-      <div class="error" role="alert"><strong>Gerät nicht gefunden.</strong>
-      <p>Der Code „${esc(id)}“ gehört zu keinem Gerät in diesem Studio. Vielleicht ist der QR-Code veraltet oder beschädigt.</p>
-      <a class="button" data-nav href="?">Zur Geräteübersicht</a></div>`;
-    document.title = "Geräteblick – Gerät nicht gefunden";
-    return;
+// --- Jetzt ---
+function nowHero(st, w) {
+  const r = data.rules;
+  if (w.training) {
+    const d = devById(w.training), s = st.devices[d.id];
+    return `<a class="hero" data-nav href="?ansicht=training">${media(typePhoto(d.type))}<div class="hero-tx">
+      <small>Du trainierst</small><h2>${esc(label(d))}</h2><p>${s.completedSets} von ${s.plannedSets} Sätzen · seit ${clock("since", d.id)}</p>
+      <span class="pillbtn">Training öffnen</span></div></a>`;
   }
-  const st = store.getState(), w = whereIs(st, me.id), s = st.devices[d.id], si = statusInfo(s);
-  $("#view").innerHTML = `
-    <a class="back" data-nav href="?gruppe=${encodeURIComponent(d.muscleGroup)}">${icon("back")} ${esc(d.muscleGroup)}</a>
-    <article class="device">
-      <img src="${esc(d.icon)}" alt="Piktogramm: ${esc(d.exercise)}" class="device-img pic">
-      <div>
-        <h2>${esc(label(d))}</h2>
-        <p class="meta">${esc(d.exercise)}</p>
-        <p class="badges"><span class="pill big ${si.cls}">${si.icon} ${si.text}</span>${queueCount(st, d.type) ? `<span class="badge">${icon("user")} ${queueCount(st, d.type)} wartend</span>` : ""}</p>
-        <p class="where">${icon("pin")} <span>${esc(d.location)}</span></p>
-        ${s.occupiedBy?.id === me.id ? "" : progressHtml(d, s)}
-      </div>
-    </article>
-    ${flashHtml()}
-    <div class="device-grid">
-      <div class="col-left">
-        <section class="actions" aria-label="Was möchtest du tun?">${deviceActionsHtml(st, w, d)}</section>
-        ${alternativesHtml(st, w, d.type)}
-        ${queueHtml(st, d.type)}
-      </div>
-      <div class="col-right"><section class="mapbox"><h3 class="group">Wo steht das Gerät?</h3>${mapSvg(d.id)}</section></div>
-    </div>
-    ${simHtml(d, s)}`;
-  document.title = `Geräteblick – ${label(d)}`;
-}
-
-// Tab „Training“: nur das, was jetzt dran ist, und der eigene Plan.
-function planAction(st, w, item) {
-  const a = typeAction(st, w, item.type);
-  const b = a.includes("data-needsets") ? a.replace(" data-needsets", ` data-sets="${item.sets}"`) : a; // Sätze kommen aus dem Plan
-  return b.replace('class="button"', 'class="button primary"'); // nächste Übung = Hauptaktion
-}
-
-function renderMine() {
-  const st = store.getState(), w = whereIs(st, me.id), r = data.rules;
-  const cur = w.training || w.reserved;
-  let html = `<h2>Training</h2>${flashHtml()}`;
-  if (cur) {
-    const d = devById(cur);
-    html += `<article class="card now"><div class="type-head"><img class="pic" src="${esc(d.icon)}" alt=""><div>
-      <h3>${link(cur)}</h3><span class="meta">${esc(d.location)}</span></div></div>
-      <section class="actions">${deviceActionsHtml(st, w, d)}</section></article>`;
+  if (w.reserved) {
+    const d = devById(w.reserved);
+    return `<div class="hero">${media(typePhoto(d.type))}<div class="hero-tx"><small>Für dich reserviert</small>
+      <h2>Geh ${feminine(d.name) ? "zur" : "zum"} ${esc(label(d))}</h2><p>Noch ${clock("res", d.id)} zum Bestätigen</p>
+      <button type="button" class="pillbtn" data-showturn>Karte zeigen</button></div></div>`;
   }
   if (w.queued) {
     const t = w.queued.type;
-    html += `<article class="card now queued"><div class="type-head"><img class="pic" src="${esc(typeIcon(t))}" alt=""><div>
-      <h3>${esc(typeName(t))}</h3><span class="big">Nr. ${w.queued.position}<small>${clock("eta", t, ` data-pos="${w.queued.position}"`)}</small></span></div></div>
-      <button type="button" class="linklike" data-action="leave" data-ref="${esc(t)}">Warteschlange verlassen</button></article>`;
+    return `<div class="hero">${media(typePhoto(t))}<div class="hero-tx"><small>Warteschlange ${esc(typeName(t))}</small>
+      <h2>Nr. ${w.queued.position}</h2><p>dran in ${clock("eta", t, ` data-pos="${w.queued.position}"`)}</p>
+      <button type="button" class="pillbtn ghost" data-action="leave" data-ref="${esc(t)}">Verlassen</button></div></div>`;
   }
-  if (!cur && !w.queued) html += `<p class="meta empty">Gerade nichts aktiv.</p>`;
+  const next = plan.find((p) => !p.done);
+  if (next) {
+    const free = !!freeDeviceOfType(st, next.type);
+    const idx = plan.indexOf(next) + 1;
+    return `<div class="hero">${media(typePhoto(next.type))}<div class="hero-tx"><small>${esc(planName() || "Plan")} · ${idx} von ${plan.length}</small>
+      <h2>${esc(typeName(next.type))} ${free ? "ist frei" : ""}</h2><p>${next.sets} Sätze${free ? "" : ` · Wartezeit ${clock("join", next.type)}`}</p>
+      ${planAction(st, w, next).replace(/class="button[^"]*"/, 'class="pillbtn"').replace("Freies Gerät nehmen", "Gerät nehmen")}</div></div>`;
+  }
+  if (plan.length) return `<div class="hero done-hero"><div class="hero-tx"><small>${esc(planName())}</small><h2>Plan geschafft</h2>
+    <button type="button" class="pillbtn" data-plan="redo">Nochmal von vorn</button></div></div>`;
+  return "";
+}
+const planName = () => plans().find((x) => x.id === planId)?.name || "";
 
-  // Plan
-  const train = w.training ? st.devices[w.training] : null;
+function planRows(st, w) {
+  const r = data.rules, train = w.training ? st.devices[w.training] : null;
   const blocked = train && !trainingFarEnough(train, r);
   const nextIdx = plan.findIndex((p) => !p.done && p.type !== train?.type && p.type !== (w.reserved && st.devices[w.reserved].type));
-  const pName = plans().find((x) => x.id === planId)?.name;
-  html += `<div class="section-head"><h3 class="group">${plan.length && pName ? esc(pName) : "Dein Plan"}</h3>${plan.length ? `<button type="button" class="linklike" data-plan="open">${icon("edit")} Wechseln</button>` : ""}</div>`;
-  if (!plan.length) {
-    html += `<div class="plan-choice">${planCards()}</div>`;
-  } else {
-    html += `<ol class="plan">${plan.map((p, i) => {
-      const isCur = train?.type === p.type && !p.done && i === plan.findIndex((x) => !x.done && x.type === p.type);
-      const queuedHere = w.queued?.type === p.type;
-      let status;
-      if (p.done) status = `<span class="badge free">${icon("check")} erledigt</span>`;
-      else if (isCur) status = `<span class="badge free">läuft</span>`;
-      else if (queuedHere) status = `<span class="badge wait">Nr. ${w.queued.position} · ${clock("eta", p.type, ` data-pos="${w.queued.position}"`)}</span>`;
-      else status = freeDeviceOfType(st, p.type) ? `<span class="badge free">frei</span>` : `<span class="badge wait">${icon("clock")} ${clock("join", p.type)}</span>`;
-      const action = i === nextIdx && !queuedHere ? (blocked ? `<span class="meta">Anstellen ab Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}</span>` : planAction(st, w, p)) : "";
-      return `<li class="plan-row${p.done ? " done" : ""}${i === nextIdx ? " next" : ""}">
-        <img class="pic" src="${esc(typeIcon(p.type))}" alt=""><span class="pr-main"><b>${esc(typeName(p.type))}</b><span class="meta">${p.sets} Sätze</span>${status}</span>${action}</li>`;
-    }).join("")}</ol>`;
-    if (plan.every((p) => p.done)) html += `<p class="meta">Plan geschafft. <button type="button" class="linklike" data-plan="redo">Nochmal von vorn</button></p>`;
-  }
+  return `<ul class="list">${plan.map((p, i) => {
+    const isCur = train?.type === p.type && !p.done && i === plan.findIndex((x) => !x.done && x.type === p.type);
+    const queuedHere = w.queued?.type === p.type;
+    let status;
+    if (p.done) status = `<span class="st ok">${icon("check")} erledigt</span>`;
+    else if (isCur) status = `<span class="st ok">läuft</span>`;
+    else if (queuedHere) status = `<span class="st warn">Nr. ${w.queued.position} · ${clock("eta", p.type, ` data-pos="${w.queued.position}"`)}</span>`;
+    else status = typeStatus(st, p.type);
+    const sub = i === nextIdx && blocked && !queuedHere ? `anstellen ab Satz ${Math.floor(train.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}` : `${p.sets} Sätze`;
+    const act = i === nextIdx && !queuedHere && !blocked && (w.training || w.queued || w.reserved) ? `<span class="cell-act">${planAction(st, w, p).replace(/class="button[^"]*"/, 'class="mini"')}</span>` : "";
+    return `<li class="cell${p.done ? " done" : ""}"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, p.type))}">${media(typeIcon(p.type), "thumb")}
+      <span class="cell-tx"><b>${esc(typeName(p.type))}</b><span>${sub}</span></span><span class="cell-r">${status}</span></a>${act}</li>`;
+  }).join("")}</ul>`;
+}
+
+function renderNow() {
+  const st = store.getState(), w = whereIs(st, me.id);
+  const free = data.devices.filter((d) => st.devices[d.id].status === "free").length, all = data.devices.length;
+  let html = titleBar("Jetzt") + flashHtml() + nowHero(st, w);
+  html += section("Im Studio", `<div class="card load"><span class="n">${free}</span><span class="load-bar"><i><b style="width:${(free / all) * 100}%"></b></i><span>von ${all} Geräten frei</span></span></div>`);
+  if (plan.length) html += section(esc(planName() || "Dein Plan"), planRows(st, w), `<button type="button" class="textbtn" data-plan="open">Wechseln</button>`);
+  else html += section("Plan wählen", `<div class="plan-choice">${planCards()}</div>`);
   $("#view").innerHTML = html;
-  document.title = "Geräteblick – Training";
+  document.title = "Geräteblick – Jetzt";
 }
 
 function planCards() {
   return plans().map((p) => `<button type="button" class="plan-card${p.id === planId ? " current" : ""}" data-plan="choose:${p.id}">
-    <b>${esc(p.name)}</b><span class="meta">${p.items.length} Übungen</span>
-    <span class="plan-pics">${p.items.map((i) => `<img class="pic" src="${esc(typeIcon(i.type))}" alt="" title="${esc(typeName(i.type))}">`).join("")}</span></button>`).join("");
+    <span class="pc-tx"><b>${esc(p.name)}</b><span>${p.items.length} Übungen · ${p.items.reduce((a, i) => a + i.sets, 0)} Sätze</span></span>
+    <span class="plan-pics">${p.items.map((i) => media(typeIcon(i.type), "mini-pic")).join("")}</span></button>`).join("");
 }
-
 function renderPlanEditor() {
   $("#plan").innerHTML = `<h2>Plan wählen</h2>
     <p class="meta">Der Fortschritt des aktuellen Plans wird zurückgesetzt.</p>
     <div class="plan-choice">${planCards()}</div>
     <button type="button" class="button wide" data-plan="close">Abbrechen</button>`;
+}
+
+// --- Geräte ---
+function renderDevices(filter) {
+  if (filter && !groupsList().includes(filter)) return navigate("?ansicht=geraete");
+  const st = store.getState();
+  const tiles = groupsList().map((g) => {
+    const devs = data.devices.filter((d) => d.muscleGroup === g);
+    const free = devs.filter((d) => st.devices[d.id].status === "free").length;
+    const on = g === filter;
+    return `<a class="gtile${on ? " on" : ""}" data-nav href="${on ? "?ansicht=geraete" : `?gruppe=${encodeURIComponent(g)}`}" aria-pressed="${on}">
+      ${media(typePhoto(typesOfGroup(g)[0]))}<span class="gt-tx"><b>${esc(g)}</b><span>${free ? `${free} von ${devs.length} frei` : "alle belegt"}</span></span></a>`;
+  }).join("");
+  const groups = (filter ? [filter] : groupsList()).map((g) => section(esc(g), `<ul class="list">${typesOfGroup(g).map((t) =>
+    `<li class="cell"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, t))}">${media(typeIcon(t), "thumb")}
+      <span class="cell-tx"><b>${esc(typeName(t))}</b><span>${typeSub(st, t)}</span></span><span class="cell-r">${typeStatus(st, t)}<span class="chev" aria-hidden="true">›</span></span></a></li>`).join("")}</ul>`)).join("");
+  $("#view").innerHTML = titleBar("Geräte") + flashHtml() + `<nav class="scroller" aria-label="Muskelgruppen">${tiles}</nav>` + groups;
+  document.title = "Geräteblick – Geräte";
+}
+
+// --- Karte ---
+function renderMap() {
+  const st = store.getState(), w = whereIs(st, me.id);
+  const mine = w.reserved || w.training || null;
+  $("#view").innerHTML = titleBar("Karte") + section("Grundriss", `<div class="card mapcard">${mapSvg(mine, true)}
+    <p class="legend"><span><i class="lg ok"></i>frei</span><span><i class="lg busy"></i>belegt</span><span><i class="lg ready"></i>reserviert</span>${mine ? `<span><i class="lg me"></i>dein Gerät</span>` : ""}</p></div>`)
+    + `<p class="footnote">Tippe einen Punkt an, um das Gerät zu öffnen.</p>`;
+  document.title = "Geräteblick – Karte";
+}
+
+// --- Gerät ---
+function renderDevice(id) {
+  const d = devById(id);
+  if (!d) {
+    $("#view").innerHTML = `<div class="error" role="alert"><strong>Gerät nicht gefunden.</strong>
+      <p>Der Code „${esc(id)}“ gehört zu keinem Gerät in diesem Studio. Vielleicht ist der QR-Code veraltet oder beschädigt.</p>
+      <a class="button" data-nav href="?ansicht=geraete">Zu den Geräten</a></div>`;
+    document.title = "Geräteblick – Gerät nicht gefunden";
+    return;
+  }
+  const st = store.getState(), w = whereIs(st, me.id), s = st.devices[d.id], si = statusInfo(s);
+  if (s.occupiedBy?.id === me.id) return navigate("?ansicht=training");
+  const q = queueCount(st, d.type);
+  $("#view").innerHTML = `
+    <div class="devhead">${media(typePhoto(d.type))}<a class="backbtn" data-nav href="?gruppe=${encodeURIComponent(d.muscleGroup)}" aria-label="Zurück zu ${esc(d.muscleGroup)}">${icon("back")}</a></div>
+    <div class="devinfo"><h1>${esc(label(d))}</h1><p class="sub">${esc(d.exercise)}</p>
+      <p class="statusline"><span class="st ${si.cls === "free" ? "ok" : si.cls === "busy" ? "bad" : "warn"}">${si.text}</span>${q ? ` · ${q} ${q === 1 ? "wartet" : "warten"}` : ""}</p>
+      ${progressHtml(d, s)}</div>
+    ${flashHtml()}
+    <div class="device-grid"><div class="col-left">
+      <section class="actions" aria-label="Was möchtest du tun?">${deviceActionsHtml(st, w, d)}</section>
+      ${alternativesHtml(st, w, d.type)}
+      ${queueHtml(st, d.type)}
+    </div><div class="col-right">${section("Wo steht es?", `<div class="card mapcard">${mapSvg(d.id)}<p class="where">${icon("pin")} <span>${esc(d.location)}</span></p></div>`)}</div></div>
+    ${simHtml(d, s)}`;
+  document.title = `Geräteblick – ${label(d)}`;
+}
+
+// --- Training (Vollbild, dunkel) ---
+function renderTraining() {
+  const st = store.getState(), w = whereIs(st, me.id);
+  if (!w.training) return navigate("?");
+  const d = devById(w.training), s = st.devices[d.id], r = data.rules;
+  const idx = plan.findIndex((p) => !p.done && p.type === d.type);
+  const ctx = idx >= 0 ? `${esc(planName())} · ${idx + 1} von ${plan.length}` : "Training";
+  const C = 2 * Math.PI * 50;
+  const ask = presence(s, r, Date.now())?.state === "ask";
+  const next = plan.find((p) => !p.done && p.type !== d.type);
+  const blocked = !trainingFarEnough(s, r);
+  let nextHtml = "";
+  if (w.queued) nextHtml = `<div class="nx">${media(typeIcon(w.queued.type), "thumb")}<span class="cell-tx"><b>Als Nächstes: ${esc(typeName(w.queued.type))}</b><span>Nr. ${w.queued.position} in der Schlange</span></span><span class="nx-r">${clock("eta", w.queued.type, ` data-pos="${w.queued.position}"`)}</span></div>`;
+  else if (next) nextHtml = `<div class="nx">${media(typeIcon(next.type), "thumb")}<span class="cell-tx"><b>Als Nächstes: ${esc(typeName(next.type))}</b><span>${blocked ? `anstellen ab Satz ${Math.floor(s.plannedSets * r.nextQueueAfterPercentSets / 100) + 1}` : `${next.sets} Sätze`}</span></span>
+      ${blocked ? `<span class="nx-r">${clock("join", next.type)}</span>` : `<span class="nx-r">${planAction(st, w, next).replace(/class="button[^"]*"/, 'class="mini"')}</span>`}</div>`;
+  $("#view").innerHTML = `
+    <div class="live-top"><a class="livex" data-nav href="?" aria-label="Zur Übersicht">${icon("back")}</a><span>${ctx}</span></div>
+    <h1 class="live-title">${esc(label(d))}</h1><p class="live-sub">${esc(d.location)}</p>
+    ${flashHtml()}
+    ${ask ? `<div class="askcard"><b>Bist du noch da?</b> Sonst wirst du in ${clock("pres", d.id)} abgemeldet. ${btn("here", d.id, "Ja, bin noch da", true)}</div>` : ""}
+    <svg class="livering" viewBox="0 0 120 120" role="img" aria-label="${s.completedSets} von ${s.plannedSets} Sätzen erledigt">
+      <circle class="track" cx="60" cy="60" r="50"/><circle class="arc" cx="60" cy="60" r="50" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - s.completedSets / s.plannedSets)}"/>
+      <text x="60" y="66" text-anchor="middle">${s.completedSets}/${s.plannedSets}</text></svg>
+    <div class="livestats"><div><b>${clock("since", d.id)}</b><span>${s.completedSets ? "seit letztem Satz" : "seit Start"}</span></div><div><b>${clock("free", d.id)}</b><span>bis frei (Schätzung)</span></div></div>
+    ${btn("set", d.id, `${icon("check")} Satz ${s.completedSets + 1} geschafft`, true).replace('class="button primary"', 'class="livebtn"')}
+    <button type="button" class="liveend" data-action="finish" data-ref="${esc(d.id)}">Gerät freigeben</button>
+    ${nextHtml}
+    <p class="live-hint">Sätze und Pausen in deinem Tempo. Hake jeden Satz direkt danach ab.</p>`;
+  document.title = `Geräteblick – Training ${label(d)}`;
+}
+
+// Tab „Jetzt“: Aktion zur nächsten Planübung (Sätze kommen aus dem Plan).
+function planAction(st, w, item) {
+  const a = typeAction(st, w, item.type);
+  const b = a.includes("data-needsets") ? a.replace(" data-needsets", ` data-sets="${item.sets}"`) : a;
+  return b.replace('class="button"', 'class="button primary"');
 }
 
 function baseUrl() {

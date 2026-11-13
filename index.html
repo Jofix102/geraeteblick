@@ -4,24 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Prototyp einer digitalen Warteschlange für Trainingsgeräte im Fitnessstudio (Simulation mit fiktiven Daten).">
-  <meta name="theme-color" content="#141516" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#f3f2ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
   <title>Geräteblick</title>
-  <link rel="stylesheet" href="styles.css?v=0.6.2">
+  <link rel="stylesheet" href="styles.css?v=0.7.0">
   <script src="js/vendor/qrcode.js"></script>
-  <script type="module" src="js/app.js?v=0.6.2"></script>
+  <script type="module" src="js/app.js?v=0.7.0"></script>
 </head>
 <body>
-  <header class="top">
-    <a data-nav href="?" class="brand" aria-label="Geräteblick, zur Startseite">
-      <span class="logo-mark" aria-hidden="true"></span>
-      <span class="brand-text"><b>Geräteblick</b><small>Beispielstudio (fiktiv)</small></span>
-    </a>
-    <div class="top-right">
-      <button type="button" class="sim-tag" data-intro title="Was ist simuliert?">Simulation</button>
-      <span class="me" title="Deine Gast-ID in diesem Tab"><b id="me">…</b></span>
-    </div>
-  </header>
   <main id="view" tabindex="-1"></main>
   <div id="error" class="error" role="alert" hidden>
     <strong>Die Gerätedaten konnten nicht geladen werden.</strong>
@@ -29,13 +19,13 @@
     <button type="button" id="retry" class="button primary">Erneut laden</button>
   </div>
   <footer class="foot">
-    <p>Prototyp v0.6.2 zur Seminararbeit Web Technologie · <a data-nav href="?ansicht=qr">QR-Codes zum Ausdrucken</a> · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
+    <p>Du bist <b id="me">…</b> (Gast-ID in diesem Tab) · Prototyp v0.7 zur Seminararbeit Web Technologie, alle Daten fiktiv · <a data-nav href="?ansicht=qr">QR-Codes zum Ausdrucken</a> · <a href="SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
   </footer>
   <div class="dock">
     <div id="mybar" class="mybar" role="status" aria-live="polite" hidden></div>
     <nav class="tabbar" aria-label="Hauptnavigation">
-      <a data-nav data-tab="studio" href="?"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Studio</span></a>
-      <a data-nav data-tab="ich" href="?ansicht=ich"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6.5 7v10M17.5 7v10M3.5 10v4M20.5 10v4M6.5 12h11"/></svg><span>Training</span></a>
+      <a data-nav data-tab="jetzt" href="?"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Jetzt</span></a>
+      <a data-nav data-tab="geraete" href="?ansicht=geraete"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Geräte</span></a>
       <a data-nav data-tab="karte" href="?ansicht=karte"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2zM9 4.5v13M15 6.5v13"/></svg><span>Karte</span></a>
     </nav>
   </div>
