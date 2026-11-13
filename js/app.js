@@ -1,9 +1,9 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.6.1";
-import { createLocalStore } from "./store-local.js?v=0.6.1";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.6.2";
+import { createLocalStore } from "./store-local.js?v=0.6.2";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
-  reservationMsLeft, trainingMs, joinWaitMs, presence
-} from "./queue-logic.js?v=0.6.1";
+  reservationMsLeft, trainingMs, joinWaitMs, presence, lastSetBefore
+} from "./queue-logic.js?v=0.6.2";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
@@ -11,7 +11,7 @@ const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 let data = null, store = null, flash = null, chosenSets = null, alertText = "", ownAction = false;
-let lastReserved = null, lastTraining = null, turnShownFor = null;
+let lastReserved = null, lastTraining = null, turnShownFor = null, soonShownFor = null;
 let me = getIdentity();
 let idleMs = 20 * 60_000; // wird nach dem Laden aus rules.idleMinutes übernommen
 
@@ -106,6 +106,13 @@ function renderBar() {
   if (w.reserved) parts.push(`<p class="bar-line turn"><b>${st.devices[w.reserved].reservedFor.direct ? "Für dich reserviert:" : `Du bist dran ${an(w.reserved)}`} ${esc(label(devById(w.reserved)))}!</b> ${clock("res", w.reserved)} <button type="button" class="button primary" data-showturn>Karte zeigen</button></p>`);
   if (w.training && presence(st.devices[w.training], data.rules, Date.now())?.state === "ask")
     parts.push(`<p class="bar-line turn"><b>Bist du noch da?</b> Sonst wirst du in ${clock("pres", w.training)} abgemeldet. ${btn("here", w.training, "Ja, bin noch da", true)}</p>`);
+  // U5: Platz 1 und am Gerät läuft der letzte Satz → vorwarnen (einmal kurz vibrieren).
+  const soon = w.queued && lastSetBefore(st, w.queued.type, me.id);
+  if (soon) {
+    parts.push(`<p class="bar-line turn"><b>Gleich bist du dran:</b> ${an(soon)} ${esc(label(devById(soon)))} läuft der letzte Satz. Mach dich bereit.</p>`);
+    if (soonShownFor !== soon && navigator.vibrate) navigator.vibrate(150);
+  }
+  soonShownFor = soon || null;
   // Auf „Mein Training“ und auf der eigenen Geräteseite steht das schon groß da: Leiste dort knapp halten.
   const q = new URLSearchParams(location.search);
   const onMine = q.get("ansicht") === "ich", onDev = q.get("geraet");

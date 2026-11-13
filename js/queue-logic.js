@@ -87,6 +87,16 @@ export function etaMs(state, type, position, rules, now) {
   return 0;
 }
 
+/**
+ * Hinweis an den Nächsten (Zielbild U5): Steht der Gast auf Platz 1 und läuft an einem Gerät
+ * dieses Typs gerade der letzte Satz, wird er gleich gerufen. Gibt die Geräte-ID zurück, sonst null.
+ */
+export function lastSetBefore(state, type, guestId) {
+  if (queueOf(state, type)[0]?.id !== guestId) return null;
+  const hit = devicesOfType(state, type).find(([, d]) => d.status === "occupied" && d.plannedSets && d.completedSets === d.plannedSets - 1);
+  return hit ? hit[0] : null;
+}
+
 /** Wartezeit, wenn man sich jetzt neu anstellt (0, wenn ein Gerät frei ist). */
 export function joinWaitMs(state, type, rules, now) {
   return freeDeviceOfType(state, type) ? 0 : etaMs(state, type, queueOf(state, type).length + 1, rules, now);

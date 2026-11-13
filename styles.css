@@ -297,3 +297,16 @@ a.hero{border-color:var(--accent)}
 .plan-card b{font-size:1.1rem}
 .plan-pics{display:flex;gap:6px;flex-wrap:wrap}
 .plan-pics .pic{width:48px;height:48px;padding:2px;border-radius:10px}
+/* v0.6.2: Kontrast im hellen Modus (WCAG 2.2, 1.4.3 Text ≥ 4,5:1, 1.4.11 Grafik/Bedienelemente ≥ 3:1).
+   Reines Gelb auf Weiß erreicht nur 1,43:1. Hell wird Gelb deshalb nur als Fläche (mit dunkler Schrift) genutzt,
+   Linien, Ränder und Fortschritt bekommen ein dunkles Gold (#7a5f00, 6,06:1 auf Weiß). */
+@media (prefers-color-scheme:light){
+  :root{--accent-line:#7a5f00}
+  .dot{border-color:var(--accent-line)}.dot.done{background:var(--accent-line)}
+  .ring .arc{stroke:var(--accent-line)}
+  .bar span{background:var(--accent-line)}
+  a.hero,.card.now,.plan-row.next,.plan-card.current,.plan-card:hover,.tile:hover,.mybar{border-color:var(--accent-line)}
+  .sim-tag{border-color:var(--accent-line)}
+  .bar-line.turn b{color:var(--ink)}
+}
+.badge,.pill{white-space:nowrap}
