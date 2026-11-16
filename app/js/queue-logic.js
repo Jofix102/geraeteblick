@@ -8,7 +8,7 @@
 //   queues:  { [Gerätetyp]: [{ id, name, sets }] }   – eine Schlange je Gerätetyp (z. B. alle Latzüge)
 //   sim:     { counter, nextSpawnAt, target, targetUntil } – simulierte Gäste (Bots)
 //
-// Zeitmodell (Finn, 06.11.2026): 1 Satz = 1 Minute, danach 3 Minuten Pause.
+// Zeitmodell (Vorgabe des Verfassers, 06.11.2026): 1 Satz = 1 Minute, danach 3 Minuten Pause.
 // Nach dem letzten Satz keine Pause am Gerät. 3 Sätze = 3×1 + 2×3 = 9 Minuten.
 
 const MIN = 60_000;
@@ -124,7 +124,7 @@ function occupy(d, person, sets, now) {
 
 /**
  * Gerät weitergeben: Nr. 1 der Schlange dieses Gerätetyps bekommt eine Reservierung, sonst frei.
- * Aus der Warteschlange gibt es immer 2 Minuten Zeit zum Beziehen (Finn, 06.11.2026).
+ * Aus der Warteschlange gibt es immer 2 Minuten Zeit zum Beziehen (Vorgabe des Verfassers, 06.11.2026).
  */
 function handOver(state, deviceId, rules, now) {
   const d = state.devices[deviceId];

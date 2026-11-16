@@ -249,3 +249,33 @@ body.live .flash{background:#1c1c1e}
 .cell.done{opacity:.7}
 .timeline .cell-main{padding-left:10px}
 .trail.dark .trail-tx{display:none}
+
+/* ---------- v0.8: am Rechner (ab 1000 px) Seitenleiste statt Tab-Leiste, zwei Spalten ---------- */
+.tabbar .side-brand,.desk-only{display:none}
+.split-a,.split-b{min-width:0}
+@media(min-width:1000px){
+  body{padding-left:248px;padding-bottom:150px}
+  main{max-width:1160px;padding:8px 16px 8px}
+  .foot{max-width:1160px}
+  .desk-only{display:block}
+  .split{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:0 8px;align-items:start}
+  .split-b{position:sticky;top:8px}
+  .split-a .plan-choice{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .map-split{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+  .dock{left:248px}
+  .tabbar{position:fixed;left:0;top:0;bottom:0;width:248px;display:flex;flex-direction:column;gap:4px;padding:20px 12px;border-top:0;border-right:.5px solid var(--sep)}
+  .tabbar a{flex-direction:row;justify-content:flex-start;gap:12px;font-size:17px;color:var(--ink);padding:8px 12px;border-radius:10px;min-height:44px}
+  .tabbar a:hover{background:var(--card2)}
+  .tabbar a[aria-current=true]{background:var(--tint);color:var(--acc-text);font-weight:600}
+  .tabbar svg{width:22px;height:22px}
+  .tabbar .side-brand{display:flex;margin-bottom:14px;padding:6px 12px;color:var(--ink)}
+  .side-brand b{display:block;font-size:17px}.side-brand small{display:block;font-size:13px;color:var(--sec)}
+  .side-mark{width:32px;height:32px;border-radius:9px;background:var(--acc) url("favicon.svg") center/100% no-repeat;flex:none}
+  .mybar{position:fixed;right:24px;bottom:24px;width:400px;max-width:400px;margin:0!important}
+  .devhead{margin:16px 16px 0;border-radius:16px;height:300px}
+  .largetitle{padding-top:28px}
+  body.live{padding-left:0}
+  body.live main{max-width:560px}
+}
+.skip{position:absolute;left:12px;top:-60px;z-index:50;background:var(--acc);color:var(--on-acc);padding:10px 14px;border-radius:10px;font-weight:600}
+.skip:focus{top:12px}

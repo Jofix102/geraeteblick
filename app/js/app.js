@@ -1,13 +1,13 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.7.2";
-import { createLocalStore } from "./store-local.js?v=0.7.2";
-import { pikto, hasPikto } from "./pikto.js?v=0.7.2";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.8.0";
+import { createLocalStore } from "./store-local.js?v=0.8.0";
+import { pikto, hasPikto } from "./pikto.js?v=0.8.0";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence, lastSetBefore
-} from "./queue-logic.js?v=0.7.2";
+} from "./queue-logic.js?v=0.8.0";
 
 const params = new URLSearchParams(location.search);
-const DATA_URL = params.has("fehler") ? "data/nicht-vorhanden.json" : "data/devices.json";
+const DATA_URL = params.has("fehler") ? "../data/nicht-vorhanden.json" : "../data/devices.json";
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -505,11 +505,14 @@ function renderNow() {
   const st = store.getState(), w = whereIs(st, me.id);
   const free = data.devices.filter((d) => st.devices[d.id].status === "free").length, all = data.devices.length;
   const lead = w.training ? "Du bist mitten im Training. Weiter so!" : w.reserved ? "Dein Gerät wartet auf dich." : w.queued ? "Du stehst an. Wir sagen dir Bescheid." : plan.length && plan.every((p) => p.done) ? "Starkes Training heute!" : plan.length ? "Bereit für die nächste Übung?" : "Was trainierst du heute?";
-  let html = titleBar(`${greet()}!`, `<p class="lead">${lead}</p>${trail()}`) + flashHtml() + nowHero(st, w);
-  html += section("Im Studio", `<div class="card load"><span class="n">${free}</span><span class="load-bar"><i><b style="width:${(free / all) * 100}%"></b></i><span>von ${all} Geräten frei</span></span></div>`);
+  const mine = w.reserved || w.training || null;
+  let html = titleBar(`${greet()}!`, `<p class="lead">${lead}</p>${trail()}`) + flashHtml() + `<div class="split"><div class="split-a">` + nowHero(st, w);
+  let side = section("Im Studio", `<div class="card load"><span class="n">${free}</span><span class="load-bar"><i><b style="width:${(free / all) * 100}%"></b></i><span>von ${all} Geräten frei</span></span></div>`);
   if (plan.length) html += section(esc(planName() || "Dein Plan"), planRows(st, w), `<button type="button" class="textbtn" data-plan="open">Wechseln</button>`);
   else html += section("Plan wählen", `<div class="plan-choice">${planCards()}</div>`);
-  $("#view").innerHTML = html;
+  // Am Rechner (ab 1000 px) steht rechts zusätzlich der Grundriss; auf dem Handy ist er im Tab „Karte“.
+  side += `<div class="desk-only">${mapCard(mine)}</div>`;
+  $("#view").innerHTML = html + `</div><aside class="split-b" aria-label="Studio auf einen Blick">${side}</aside></div>`;
   document.title = "Geräteblick – Jetzt";
 }
 
@@ -539,7 +542,8 @@ function renderDevices(filter) {
   const groups = (filter ? [filter] : groupsList()).map((g) => section(esc(g), `<ul class="list">${typesOfGroup(g).map((t) =>
     `<li class="cell"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, t))}">${media(t, "thumb")}
       <span class="cell-tx"><b>${esc(typeName(t))}</b><span>${typeSub(st, t)}</span></span><span class="cell-r">${typeStatus(st, t)}<span class="chev" aria-hidden="true">›</span></span></a></li>`).join("")}</ul>`)).join("");
-  $("#view").innerHTML = titleBar("Geräte") + flashHtml() + `<nav class="scroller" aria-label="Muskelgruppen">${tiles}</nav>` + groups;
+  $("#view").innerHTML = titleBar("Geräte") + flashHtml() + `<nav class="scroller" aria-label="Muskelgruppen">${tiles}</nav>`
+    + `<div class="split"><div class="split-a">${groups}</div><aside class="split-b desk-only" aria-label="Grundriss">${mapCard(null)}</aside></div>`;
   document.title = "Geräteblick – Geräte";
 }
 
@@ -547,10 +551,18 @@ function renderDevices(filter) {
 function renderMap() {
   const st = store.getState(), w = whereIs(st, me.id);
   const mine = w.reserved || w.training || null;
-  $("#view").innerHTML = titleBar("Karte") + section("Grundriss", `<div class="card mapcard">${mapSvg(mine, true)}
-    <p class="legend"><span><i class="lg ok"></i>frei</span><span><i class="lg busy"></i>belegt</span><span><i class="lg ready"></i>reserviert</span>${mine ? `<span><i class="lg me"></i>dein Gerät</span>` : ""}</p></div>`)
-    + `<p class="footnote">Tippe einen Punkt an, um das Gerät zu öffnen.</p>`;
+  const rows = data.devices.map((d) => { const si = statusInfo(st.devices[d.id]);
+    return `<li class="cell"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(d.id)}">${media(d.type, "thumb")}
+      <span class="cell-tx"><b>${esc(label(d))}</b><span>${esc(d.location)}</span></span><span class="cell-r"><span class="st ${si.cls === "free" ? "ok" : si.cls === "busy" ? "bad" : "warn"}">${si.text}</span></span></a></li>`; }).join("");
+  $("#view").innerHTML = titleBar("Karte") + `<div class="split map-split"><div class="split-a">${mapCard(mine, "Grundriss")}
+    <p class="footnote">Tippe einen Punkt an, um das Gerät zu öffnen.</p></div>
+    <aside class="split-b desk-only" aria-label="Alle Geräte">${section("Alle Geräte", `<ul class="list">${rows}</ul>`)}</aside></div>`;
   document.title = "Geräteblick – Karte";
+}
+
+function mapCard(mine, title = "Grundriss") {
+  return section(title, `<div class="card mapcard">${mapSvg(mine, true)}
+    <p class="legend"><span><i class="lg ok"></i>frei</span><span><i class="lg busy"></i>belegt</span><span><i class="lg ready"></i>reserviert</span>${mine ? `<span><i class="lg me"></i>dein Gerät</span>` : ""}</p></div>`);
 }
 
 // --- Gerät ---
@@ -728,6 +740,6 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("[data-intro]")) $("#intro").showModal();
   if (e.target.closest("[data-closeintro]")) { $("#intro").close(); try { localStorage.setItem("geraeteblick.introSeen", "1"); } catch { /* egal */ } }
 });
-try { if (!localStorage.getItem("geraeteblick.introSeen") && !params.has("fehler")) $("#intro").showModal(); } catch { /* Speicher gesperrt */ }
+try { if (!localStorage.getItem("geraeteblick.introSeen") && !params.has("fehler") && !params.has("embed")) $("#intro").showModal(); } catch { /* Speicher gesperrt */ }
 render();
 load();
