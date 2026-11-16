@@ -1,7 +1,7 @@
 // Studio-Website (fiktiv): lädt dieselben Gerätedaten wie die App und zeigt die Auslastung.
 // Die Auslastung kommt aus der Simulation im Browser (gleicher localStorage wie die App).
-import { createLocalStore } from "./app/js/store-local.js?v=0.8.0";
-import { pikto } from "./app/js/pikto.js?v=0.8.0";
+import { createLocalStore } from "./app/js/store-local.js?v=0.8.1";
+import { pikto } from "./app/js/pikto.js?v=0.8.1";
 
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);

@@ -1,10 +1,10 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.8.0";
-import { createLocalStore } from "./store-local.js?v=0.8.0";
-import { pikto, hasPikto } from "./pikto.js?v=0.8.0";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.8.1";
+import { createLocalStore } from "./store-local.js?v=0.8.1";
+import { pikto, hasPikto } from "./pikto.js?v=0.8.1";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence, lastSetBefore
-} from "./queue-logic.js?v=0.8.0";
+} from "./queue-logic.js?v=0.8.1";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "../data/nicht-vorhanden.json" : "../data/devices.json";
@@ -542,8 +542,11 @@ function renderDevices(filter) {
   const groups = (filter ? [filter] : groupsList()).map((g) => section(esc(g), `<ul class="list">${typesOfGroup(g).map((t) =>
     `<li class="cell"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(typeTarget(st, t))}">${media(t, "thumb")}
       <span class="cell-tx"><b>${esc(typeName(t))}</b><span>${typeSub(st, t)}</span></span><span class="cell-r">${typeStatus(st, t)}<span class="chev" aria-hidden="true">›</span></span></a></li>`).join("")}</ul>`)).join("");
-  $("#view").innerHTML = titleBar("Geräte") + flashHtml() + `<nav class="scroller" aria-label="Muskelgruppen">${tiles}</nav>`
-    + `<div class="split"><div class="split-a">${groups}</div><aside class="split-b desk-only" aria-label="Grundriss">${mapCard(null)}</aside></div>`;
+  // Am Rechner (v0.8.1): schlichte Textfilter statt großer Kacheln, Geräte als ruhiges Raster, keine zweite Karte.
+  const chips = [`<a class="chip${filter ? "" : " on"}" data-nav href="?ansicht=geraete" aria-pressed="${!filter}">Alle</a>`].concat(groupsList().map((g) =>
+    `<a class="chip${g === filter ? " on" : ""}" data-nav href="?gruppe=${encodeURIComponent(g)}" aria-pressed="${g === filter}">${esc(g)}</a>`)).join("");
+  $("#view").innerHTML = titleBar("Geräte") + flashHtml() + `<nav class="scroller mob-only" aria-label="Muskelgruppen">${tiles}</nav>`
+    + `<nav class="chips desk-only" aria-label="Muskelgruppen">${chips}</nav><div class="devlist">${groups}</div>`;
   document.title = "Geräteblick – Geräte";
 }
 
@@ -551,12 +554,10 @@ function renderDevices(filter) {
 function renderMap() {
   const st = store.getState(), w = whereIs(st, me.id);
   const mine = w.reserved || w.training || null;
-  const rows = data.devices.map((d) => { const si = statusInfo(st.devices[d.id]);
-    return `<li class="cell"><a class="cell-main" data-nav href="?geraet=${encodeURIComponent(d.id)}">${media(d.type, "thumb")}
-      <span class="cell-tx"><b>${esc(label(d))}</b><span>${esc(d.location)}</span></span><span class="cell-r"><span class="st ${si.cls === "free" ? "ok" : si.cls === "busy" ? "bad" : "warn"}">${si.text}</span></span></a></li>`; }).join("");
-  $("#view").innerHTML = titleBar("Karte") + `<div class="split map-split"><div class="split-a">${mapCard(mine, "Grundriss")}
-    <p class="footnote">Tippe einen Punkt an, um das Gerät zu öffnen.</p></div>
-    <aside class="split-b desk-only" aria-label="Alle Geräte">${section("Alle Geräte", `<ul class="list">${rows}</ul>`)}</aside></div>`;
+  const n = (k) => data.devices.filter((d) => st.devices[d.id].status === k).length;
+  // Am Rechner (v0.8.1): nur der Grundriss, groß und mittig, dazu drei Zahlen statt einer langen Liste.
+  $("#view").innerHTML = titleBar("Karte") + `<div class="mapwide">${mapCard(mine, "Grundriss")}
+    <p class="footnote">Tippe einen Punkt an, um das Gerät zu öffnen. Gerade <b>${n("free")} frei</b>, ${n("occupied")} belegt, ${n("reserved")} reserviert.</p></div>`;
   document.title = "Geräteblick – Karte";
 }
 
