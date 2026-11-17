@@ -9,7 +9,8 @@
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
   font-size:17px;
 }
-@media (prefers-color-scheme:dark){:root:not(.light){
+/* v0.12: dunkel wie die Website (immer, außer ?hell=1) */
+@media all{:root:not(.light){
   --bg:#000;--card:#1c1c1e;--card2:#2c2c2e;--ink:#f5f5f7;--sec:#a1a1a6;--sep:#38383a;
   --acc:#5e5ce6;--acc-text:#a9a7ff;--on-acc:#ffffff;--tint:#25244a;--fig:#a9a7ff;--pad:#4b49a6;--pkm:#8e8e93;--ok:#30d158;--warn:#ffb340;--bad:#ff6961;--link:#4da3ff;--tabbg:rgba(22,22,24,.92);--shadow:none}}
 *{box-sizing:border-box}
@@ -26,8 +27,7 @@ main{max-width:720px;margin:0 auto;padding:0 0 8px}
 .largetitle{padding:calc(14px + env(safe-area-inset-top)) 16px 8px}
 .lt-top{display:flex;justify-content:space-between;align-items:center;color:var(--sec);font-size:15px;min-height:32px}
 .simchip{font:inherit;font-size:13px;font-weight:600;color:var(--sec);background:var(--card2);border:0;border-radius:99px;padding:5px 11px;cursor:pointer}
-@media (prefers-color-scheme:light){.simchip{background:#e5e5ea}}
-:root.light{color-scheme:light}:root.light .simchip{background:#e5e5ea}
+:root.light{color-scheme:light}:root:not(.light){color-scheme:dark}:root.light .simchip{background:#e5e5ea}
 .largetitle h1{font-size:34px;font-weight:700;letter-spacing:.01em;line-height:1.2;margin-top:2px}
 
 /* ---------- Gruppen und Listen (HIG: grouped style) ---------- */
@@ -114,7 +114,6 @@ main{max-width:720px;margin:0 auto;padding:0 0 8px}
 .actions{display:flex;flex-direction:column;gap:10px;margin:18px 16px 0}
 .actions p{margin:0;font-size:17px}
 .button,button.button{font:inherit;font-weight:600;font-size:17px;min-height:50px;padding:12px 18px;border-radius:14px;border:0;background:var(--card2);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
-@media (prefers-color-scheme:light){.button,button.button{background:#e5e5ea}}
 :root.light .button,:root.light button.button{background:#e5e5ea}
 .button.primary,button.button.primary{background:var(--acc);color:var(--on-acc)}
 .button.wide{width:100%}
@@ -146,7 +145,7 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--link);outline-offse
 .map{width:100%;height:auto;display:block;border-radius:8px}
 .map .floor{fill:var(--card2);stroke:var(--sep);stroke-width:.4}
 .map .zone{fill:var(--card)}
-@media (prefers-color-scheme:dark){:root:not(.light) .map .zone{fill:#3a3a3c}}
+@media all{:root:not(.light) .map .zone{fill:#3a3a3c}}
 .map .zone-label{font-size:2.6px;fill:var(--sec);font-weight:600}
 .map .entrance{font-size:3px;fill:var(--ink);font-weight:700}
 .map .spot circle{fill:var(--sec)}
@@ -188,7 +187,7 @@ body.live .flash{background:#1c1c1e}
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:20;pointer-events:none}
 .dock>*{pointer-events:auto}
 .mybar{max-width:620px;margin:0 auto 8px!important;width:calc(100% - 16px);background:var(--card);border-radius:16px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:15px}
-@media (prefers-color-scheme:dark){:root:not(.light) .mybar{background:#2c2c2e}}
+@media all{:root:not(.light) .mybar{background:#2c2c2e}}
 .bar-line{margin:3px 0}
 .bar-line .button{display:inline-flex;width:auto;min-height:36px;padding:6px 12px;font-size:15px;margin-left:6px}
 .bar-line a,.bar-line .linklike{color:var(--link);font-weight:600;margin-left:6px}
@@ -288,3 +287,6 @@ body.live .flash{background:#1c1c1e}
 }
 .skip{position:absolute;left:12px;top:-60px;z-index:50;background:var(--acc);color:var(--on-acc);padding:10px 14px;border-radius:10px;font-weight:600}
 .skip:focus{top:12px}
+
+/* v0.12: Knöpfe rund wie auf der Website (Pill-Form) */
+.button,button.button{border-radius:980px}

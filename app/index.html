@@ -4,14 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Prototyp einer digitalen Warteschlange für Trainingsgeräte im Fitnessstudio (Simulation mit fiktiven Daten).">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000">
   <title>Geräteblick</title>
-  <script>if (/[?&](embed|hell)=1/.test(location.search)) document.documentElement.classList.add("light");</script>
+  <script>if (/[?&]hell=1/.test(location.search)) document.documentElement.classList.add("light");</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=0.11.0">
+  <link rel="stylesheet" href="styles.css?v=0.12.0">
   <script src="js/vendor/qrcode.js"></script>
-  <script type="module" src="js/app.js?v=0.11.0"></script>
+  <script type="module" src="js/app.js?v=0.12.0"></script>
 </head>
 <body>
   <a class="skip" href="#view">Zum Inhalt springen</a>
@@ -22,7 +21,7 @@
     <button type="button" id="retry" class="button primary">Erneut laden</button>
   </div>
   <footer class="foot">
-    <p>Du bist <b id="me">…</b> (Gast-ID in diesem Tab) · Prototyp v0.11.0 zur Seminararbeit Web Technologie, alle Daten fiktiv · <a data-nav href="?ansicht=qr">QR-Codes zum Ausdrucken</a> · <a href="../">Zur Website</a> · <a href="../SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
+    <p>Du bist <b id="me">…</b> (Gast-ID in diesem Tab) · Prototyp v0.12.0 zur Seminararbeit Web Technologie, alle Daten fiktiv · <a data-nav href="?ansicht=qr">QR-Codes zum Ausdrucken</a> · <a href="../">Zur Website</a> · <a href="../SOURCES.md">Datenherkunft</a> · <a href="?fehler=1">Fehlerfall zeigen</a> · <button type="button" id="reset" class="linklike">Demo zurücksetzen</button></p>
   </footer>
   <div class="dock">
     <div id="mybar" class="mybar" role="status" aria-live="polite" hidden></div>
