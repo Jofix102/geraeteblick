@@ -19,13 +19,14 @@ async function load() {
     qr(data);
   } catch (e) {
     console.error(e);
-    $("#live").innerHTML = `<p class="err">Die Auslastung kann gerade nicht geladen werden (${esc(e.message)}). Die App erreichst du trotzdem über „App öffnen“.</p>`;
+    if ($("#live")) $("#live").innerHTML = `<p class="err">Die Auslastung kann gerade nicht geladen werden (${esc(e.message)}). Die App erreichst du trotzdem über „App öffnen“.</p>`;
   }
 }
 
 const groups = (data) => [...new Set(data.devices.map((d) => d.muscleGroup))];
 
 function renderLive(data, st) {
+  if (!$("#live")) return;
   const all = data.devices.length, free = data.devices.filter((d) => st.devices[d.id].status === "free").length;
   const waiting = Object.values(st.queues).reduce((a, q) => a + q.length, 0);
   const pct = Math.round((1 - free / all) * 100);
@@ -39,6 +40,7 @@ function renderLive(data, st) {
 }
 
 function renderAreas(data) {
+  if (!$("#areas")) return;
   $("#areas").innerHTML = groups(data).map((g) => {
     const devs = data.devices.filter((d) => d.muscleGroup === g);
     const types = [...new Set(devs.map((d) => d.type))];
@@ -48,7 +50,7 @@ function renderAreas(data) {
 }
 
 function qr(data) {
-  if (typeof qrcode !== "function") return;
+  if (typeof qrcode !== "function" || !$("#qr")) return;
   const q = qrcode(0, "M"); q.addData(data.meta.publicBaseUrl); q.make();
   $("#qr").innerHTML = `<img alt="QR-Code zur Geräteblick-App" width="120" height="120" src="${q.createDataURL(4, 2)}">`;
 }

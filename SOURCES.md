@@ -14,3 +14,9 @@ Aufbau und Stil angelehnt an die Apple Human Interface Guidelines (https://devel
 
 ## Studio-Website ab v0.8 (16.11.2026)
 `index.html`, `site.css`, `site.js`: Startseite des fiktiven „Studio Indigo“. Name, Adresse (Beispielweg 1, 12345 Musterstadt), E-Mail-Adresse unter der reservierten Domain `.example`, Öffnungszeiten und Preise sind ausgedacht und als Beispiel gekennzeichnet. Die Live-Auslastung auf der Website liest denselben simulierten Zustand wie die App (data/devices.json plus Simulation im Browser). Keine Fotos, keine fremden Bilder oder Schriften.
+
+## Fotos der Website-Entwürfe (ab 17.11.2026, `studio-a.html`, `studio-b.html`, `studio-c.html`)
+Zwölf Stockfotos von Unsplash und Pexels, ausgewählt am 16.11.2026. Eine vollständige Liste mit Fotoseite, Fotograf und Lizenz steht in `fotos/quellen.csv`, und jede Seite nennt die Fotos im Fußbereich. Die Bilder wurden für die Website verkleinert (1600 px und 800 px) und liegen im Ordner `fotos/`. Sie werden also nicht von fremden Servern geladen.
+- Unsplash-Lizenz (https://unsplash.com/license): kostenlose Nutzung, auch kommerziell, Bearbeitung erlaubt. Eine Namensnennung ist nicht nötig, wird aber gern gesehen.
+- Pexels-Lizenz (https://www.pexels.com/license/): kostenlose Nutzung, Bearbeitung erlaubt, Namensnennung nicht nötig. Abgebildete Personen oder Marken dürfen nicht als Empfehlung erscheinen.
+- Auswahlregel: keine deutlich lesbaren Marken- oder Studionamen und keine klar erkennbaren Gesichter. Fünf weitere Kandidaten wurden deshalb verworfen. Die Bilder 01 bis 03 wirken wie 3D-Renderings. Auf den Fotoseiten ist das nicht angegeben, es ist nur ein Eindruck.

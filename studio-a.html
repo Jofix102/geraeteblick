@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Studio Indigo (fiktiv), Entwurf A: Startseite mit Foto-Diashow und Kacheln, dazu die Geräteblick-App.">
+  <meta name="theme-color" content="#fbfbfd">
+  <meta name="color-scheme" content="light">
+  <title>Studio Indigo – Trainieren ohne Warten (Entwurf A)</title>
+  <script>(function(){var q=location.search;if(/[?&](geraet|ansicht|fehler|gruppe)=/.test(q))location.replace("app/"+q+location.hash);})();</script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="studio.css?v=0.9.0">
+  <script type="module" src="site.js?v=0.9.0"></script>
+</head>
+<body>
+  <a class="skip" href="#inhalt">Zum Inhalt springen</a>
+  <p class="fiction">Fiktives Studio · Prototyp zur Seminararbeit „Web Technologie“ (FOM) · Alle Angaben sind ausgedacht.</p>
+  <header class="gnav"><div class="wrap">
+    <a class="brand" href="#top" id="top"><i aria-hidden="true"></i>Studio Indigo</a>
+    <nav aria-label="Seitennavigation"><ul>
+      <li><a href="#studio">Studio</a></li><li><a href="#auslastung">Auslastung</a></li><li><a href="#app">App</a></li><li><a href="#mitglied">Mitgliedschaft</a></li><li><a href="#kontakt">Kontakt</a></li>
+    </ul></nav>
+    <a class="pill sm" href="app/">App öffnen</a>
+  </div></header>
+  <main id="inhalt">
+    <section class="slides" id="studio" aria-roledescription="Diashow" aria-label="Eindrücke aus dem Studio">
+      <div class="slide on" aria-hidden="false"><img src="fotos/02-studio-stadtblick-fenster.jpg" srcset="fotos/02-studio-stadtblick-fenster-800.jpg 800w, fotos/02-studio-stadtblick-fenster.jpg 1600w" sizes="100vw" alt="Helle Trainingsfläche mit Geräten vor großen Fenstern" loading="eager" decoding="async"></div><div class="slide" aria-hidden="true"><img src="fotos/06-maschinenreihe-hell.jpg" srcset="fotos/06-maschinenreihe-hell-800.jpg 800w, fotos/06-maschinenreihe-hell.jpg 1600w" sizes="100vw" alt="Reihe von Kraftgeräten in einem hellen Studio" loading="lazy" decoding="async"></div><div class="slide" aria-hidden="true"><img src="fotos/10-kurzhanteln-regal.jpg" srcset="fotos/10-kurzhanteln-regal-800.jpg 800w, fotos/10-kurzhanteln-regal.jpg 1600w" sizes="100vw" alt="Kurzhanteln ordentlich im Regal" loading="lazy" decoding="async"></div><div class="slide" aria-hidden="true"><img src="fotos/17-empfang-tresen-fensterfront.jpg" srcset="fotos/17-empfang-tresen-fensterfront-800.jpg 800w, fotos/17-empfang-tresen-fensterfront.jpg 1600w" sizes="100vw" alt="Empfangstresen und Geräte in einem modernen Studio" loading="lazy" decoding="async"></div>
+      <div class="over"><p class="eyebrow">Neu bei Studio Indigo</p><h1 class="h-xl">Trainieren.<br>Ohne Warten.</h1><p class="lead">Sieh, was frei ist. Stell dich digital an.</p><div class="ctas"><a class="pill" href="app/">App öffnen</a><a class="more" href="#app">Mehr erfahren</a></div></div>
+      <div class="dots"><button type="button" aria-label="Bild 1 von 4" aria-current="true" data-slide="0"></button><button type="button" aria-label="Bild 2 von 4" aria-current="false" data-slide="1"></button><button type="button" aria-label="Bild 3 von 4" aria-current="false" data-slide="2"></button><button type="button" aria-label="Bild 4 von 4" aria-current="false" data-slide="3"></button><button type="button" class="pp" data-pause aria-label="Diashow anhalten">❚❚</button></div>
+    </section>
+    <section class="tiles" aria-label="Highlights">
+      <a class="tile" href="app/" id="app"><h2 class="h-l">Geräteblick</h2><p class="lead">Deine Warteschlange in der Hosentasche.</p><div class="ctas"><span class="pill sm">Öffnen</span><span class="more">So funktioniert's</span></div><div class="phone cut"><iframe src="app/?embed=1" title="Geräteblick-App (Vorschau)" loading="lazy"></iframe></div></a>
+      <a class="tile img" href="#auslastung"><img src="fotos/09-geraete-sonnenlicht.jpg" srcset="fotos/09-geraete-sonnenlicht-800.jpg 800w, fotos/09-geraete-sonnenlicht.jpg 1600w" sizes="100vw" alt="Geräte im Sonnenlicht" loading="lazy" decoding="async"><h2 class="h-l">Live-Auslastung</h2><p class="lead">Schau, bevor du losgehst.</p><div class="ctas"><span class="more">Jetzt ansehen</span></div></a>
+      <a class="tile img" href="#mitglied"><img src="fotos/11-kabelzug-station.jpg" srcset="fotos/11-kabelzug-station-800.jpg 800w, fotos/11-kabelzug-station.jpg 1600w" sizes="100vw" alt="Kabelzugstation" loading="lazy" decoding="async"><h2 class="h-l">Mitgliedschaft</h2><p class="lead">Ab 24,90 € im Monat.</p><div class="ctas"><span class="more">Vergleichen</span></div></a>
+      <a class="tile img" href="#kontakt"><img src="fotos/16-haende-griff-kabelzug.jpg" srcset="fotos/16-haende-griff-kabelzug-800.jpg 800w, fotos/16-haende-griff-kabelzug.jpg 1600w" sizes="100vw" alt="Hände am Griff eines Kabelzugs" loading="lazy" decoding="async"><h2 class="h-l">Probetraining</h2><p class="lead">Einmal kostenlos ausprobieren.</p><div class="ctas"><span class="more">Termin anfragen</span></div></a>
+    </section>
+    <section class="sec band center" id="auslastung" aria-labelledby="live-h">
+      <div class="wrap">
+        <p class="eyebrow">Live im Studio</p>
+        <h2 class="h-l" id="live-h">Wie voll ist es gerade?</h2>
+        <p class="lead" style="margin:14px auto 36px;max-width:640px">Schau vorher nach. Die Zahlen kommen aus derselben Quelle wie die App.</p>
+        <div class="livecard"><div id="live" aria-live="polite"></div></div>
+        <p class="note">Simulation mit fiktiven Daten (data/devices.json), berechnet in deinem Browser.</p>
+      </div>
+    </section>
+    <section class="sec center" id="bereiche" aria-labelledby="ber-h">
+      <div class="wrap">
+        <h2 class="h-l" id="ber-h">Fünf Bereiche. Sechzehn Geräte.</h2>
+        <p class="lead" style="margin:14px auto 40px;max-width:640px">Jede Station hat einen QR-Code. Scannen öffnet direkt das Gerät in der App.</p>
+        <div id="areas" class="areas"></div>
+      </div>
+    </section>
+    <section class="sec center" id="mitglied" aria-labelledby="mit-h">
+      <div class="wrap">
+        <h2 class="h-l" id="mit-h">Welche Mitgliedschaft passt zu dir?</h2>
+        <p class="lead" style="margin:14px auto 48px">Alle mit Geräteblick. Ohne Aufnahmegebühr.</p>
+        <div class="compare">
+          <div class="col"><h3 class="h-m">Basis</h3><p class="price">24,90 €<small> / Monat</small></p><a class="pill" href="#kontakt">Probetraining</a><ul><li>Trainingsfläche</li><li>Geräteblick-App</li><li>12 Monate Laufzeit</li></ul></div>
+          <div class="col"><span class="badge">Beliebt</span><h3 class="h-m">Plus</h3><p class="price">34,90 €<small> / Monat</small></p><a class="pill" href="#kontakt">Probetraining</a><ul><li>Alles aus Basis</li><li>Kurse und Sauna</li><li>Monatlich kündbar</li></ul></div>
+          <div class="col"><h3 class="h-m">Tageskarte</h3><p class="price">12 €<small> / Tag</small></p><a class="pill ghost" href="#kontakt">Vorbeikommen</a><ul><li>Trainingsfläche</li><li>Geräteblick als Gast</li><li>Ohne Vertrag</li></ul></div>
+        </div>
+        <p class="note">Preise und Leistungen sind Beispielwerte für den Prototyp.</p>
+      </div>
+    </section>
+    <section class="sec band" id="kontakt" aria-labelledby="kon-h">
+      <div class="wrap" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:40px">
+        <div><h2 class="h-l" id="kon-h">Komm vorbei.</h2><p class="lead" style="margin-top:16px">Studio Indigo<br>Beispielweg 1<br>12345 Musterstadt</p><p style="margin-top:12px"><a href="mailto:kontakt@studio-indigo.example">kontakt@studio-indigo.example</a></p></div>
+        <div><h3 class="h-m">Öffnungszeiten</h3><dl style="display:grid;grid-template-columns:1fr auto;gap:8px 24px;margin-top:16px;font-size:17px"><dt>Montag bis Freitag</dt><dd style="margin:0">6 bis 23 Uhr</dd><dt>Samstag und Sonntag</dt><dd style="margin:0">8 bis 20 Uhr</dd><dt>Feiertage</dt><dd style="margin:0">9 bis 18 Uhr</dd></dl></div>
+      </div>
+    </section>
+  </main>
+  <footer class="foot"><div class="wrap">
+    <p><b>Studio Indigo ist kein echtes Unternehmen.</b> Website und App sind ein studentischer Prototyp zur Seminararbeit im Modul Web Technologie (FOM). Adresse, Preise und E-Mail sind ausgedacht (<code>.example</code> ist eine reservierte Domain).</p>
+    <p><a href="SOURCES.md">Datenherkunft und Quellen</a> · <a href="README.md">Über den Prototyp</a> · <a href="app/?ansicht=qr">QR-Codes der Geräte</a> · <a href="app/?fehler=1">Fehlerfall der App</a></p>
+    <div class="credits"><p><b>Bildnachweise.</b> Alle Fotos sind frei lizenziert (Unsplash-Lizenz bzw. Pexels-Lizenz, Namensnennung freiwillig), ausgewählt am 16.11.2026, für die Website verkleinert und hier selbst gespeichert.</p><ul><li>Studio holz fensterfront: Foto von Aalo Lens auf <a href="https://unsplash.com/de/fotos/moderner-fitnessraum-mit-laufbandern-und-grossen-fenstern-asVNiNtSSXE">Unsplash</a> (Unsplash-Lizenz)</li><li>Studio stadtblick fenster: Foto von Aalo Lens auf <a href="https://unsplash.com/de/fotos/moderner-fitnessraum-mit-trainingsgeraten-und-stadtblick-fuyulf8cNmg">Unsplash</a> (Unsplash-Lizenz)</li><li>Studio weiss cardio: Foto von eran design auf <a href="https://unsplash.com/de/fotos/modernes-fitnessstudio-mit-laufbandern-und-heimtrainern-X0rfCRWl690">Unsplash</a> (Unsplash-Lizenz)</li><li>Maschinenreihe hell: Foto von hi room auf <a href="https://www.pexels.com/photo/empty-interior-of-gym-17227607/">Pexels</a> (Pexels-Lizenz)</li><li>Studio laufbaender spinde: Foto von Denys Gromov auf <a href="https://www.pexels.com/photo/black-and-gray-exercise-equipment-4716814/">Pexels</a> (Pexels-Lizenz)</li><li>Geraete sonnenlicht: Foto von Stefan Vibes auf <a href="https://unsplash.com/de/fotos/fitnessgerate-im-sonnenbeschienenen-fitnessstudio-VhHPtxeKfEc">Unsplash</a> (Unsplash-Lizenz)</li><li>Kurzhanteln regal: Foto von Dan Dennis auf <a href="https://unsplash.com/de/fotos/schwarze-und-silberne-hanteln-auf-gestell-ft46At8PbJ0">Unsplash</a> (Unsplash-Lizenz)</li><li>Kabelzug station: Foto von Stefan Vibes auf <a href="https://unsplash.com/de/fotos/kabelmaschine-im-arbeitsbereich-des-fitnessstudios-WFE0QrmLsMM">Unsplash</a> (Unsplash-Lizenz)</li><li>Rudergeraet beine: Foto von Kyle Kranz auf <a href="https://unsplash.com/de/fotos/person-die-auf-dem-rudergerat-sitzt-ss1YP57gLbM">Unsplash</a> (Unsplash-Lizenz)</li><li>Training latzug ruecken: Foto von Jean-Daniel Francoeur auf <a href="https://www.pexels.com/photo/back-view-of-man-exercising-at-gym-19254705/">Pexels</a> (Pexels-Lizenz)</li><li>Haende griff kabelzug: Foto von Mina Rad auf <a href="https://unsplash.com/de/fotos/mannerhande-die-den-griff-einer-kabelmaschine-umklammern-WY_Ro2csC3o">Unsplash</a> (Unsplash-Lizenz)</li><li>Empfang tresen fensterfront: Foto von Max Vakhtbovych auf <a href="https://www.pexels.com/photo/fitness-machines-and-reception-desk-in-modern-sports-club-7031717/">Pexels</a> (Pexels-Lizenz)</li></ul></div>
+  </div></footer>
+  <nav class="vchooser" aria-label="Entwurf wählen"><a href="studio-a.html" aria-current=page>Variante A</a><a href="studio-b.html">Variante B</a><a href="studio-c.html">Variante C</a></nav>
+  <script src="app/js/vendor/qrcode.js"></script>
+  <script src="studio-ui.js?v=0.9.0"></script>
+</body>
+</html>
