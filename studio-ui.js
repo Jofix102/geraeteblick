@@ -1,4 +1,4 @@
-// Studio Indigo – Bedienelemente der Website-Entwürfe (Diashow, Galerie, Fotoauswahl, Tarif-Zusammenfassung).
+// Studio BGM – Bedienelemente der Website-Entwürfe (Diashow, Galerie, Fotoauswahl, Tarif-Zusammenfassung).
 // Kein Framework, keine Daten werden gespeichert oder verschickt.
 (function () {
   var $ = function (s, r) { return (r || document).querySelector(s); };

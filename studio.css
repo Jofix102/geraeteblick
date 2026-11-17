@@ -1,4 +1,4 @@
-/* Studio Indigo – Website-Varianten (v0.9-Entwurf). Hell wie Apple-Produktseiten: Weiß/Hellgrau, große Typografie, Fotos, ein Akzent (Indigo). */
+/* Studio BGM – Website-Varianten (v0.9-Entwurf). Hell wie Apple-Produktseiten: Weiß/Hellgrau, große Typografie, Fotos, ein Akzent (Indigo). */
 :root{--bg:#fff;--band:#f5f5f7;--ink:#1d1d1f;--sec:#6e6e73;--line:#d2d2d7;--acc:#5856d6;--acc-d:#4745b8;--tint:#ececfd;--fig:#5856d6;--pad:#c3c2f4;--pkm:#8e8e93;--ok:#1f7a35;--bad:#c4000f;
   color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;font-size:17px}
 *{box-sizing:border-box}
