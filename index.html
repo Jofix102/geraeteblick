@@ -4,77 +4,97 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Geräteblick: digitale Warteschlange für Trainingsgeräte im Fitnessstudio. Prototyp zur Seminararbeit Web Technologie, Demo mit simulierten Daten.">
-  <meta name="theme-color" content="#fbfbfd">
-  <meta name="color-scheme" content="light">
-  <title>Geräteblick – Nie wieder neben dem Gerät warten</title>
+  <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="dark">
+  <title>Geräteblick – Anstellen. Ohne Anstehen.</title>
   <script>
     // Alte Links (QR-Codes, Seminararbeit) zeigten auf die Wurzel: ?geraet=, ?ansicht=, ?fehler= gehören zur App unter app/
     (function () { var q = location.search; if (/[?&](geraet|ansicht|fehler|gruppe)=/.test(q)) location.replace("app/" + q + location.hash); })();
   </script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="web.css?v=0.10.0">
+  <link rel="stylesheet" href="web.css?v=0.11.0">
 </head>
 <body>
   <a class="skip" href="#inhalt">Zum Inhalt springen</a>
   <p class="fiction">Prototyp zur Seminararbeit „Web Technologie“ (FOM) · Die Demo nutzt simulierte Daten.</p>
-  <header class="gnav"><div class="wrap">
-    <a class="brand" href="#top" id="top"><i aria-hidden="true"></i>Geräteblick</a>
-    <nav aria-label="Seitennavigation"><ul><li><a href="#funktionen">Funktionen</a></li><li><a href="#ueberall">Überall</a></li></ul></nav>
-    <a class="pill sm" href="app/">Demo öffnen</a>
+  <header class="pnav"><div class="wrap">
+    <a class="pname" href="#top" id="top"><i aria-hidden="true"></i>Geräteblick</a>
+    <nav aria-label="Seitennavigation"><ul><li><a href="#ansehen">Überblick</a></li><li><a href="#zahlen">Auf einen Blick</a></li></ul></nav>
+    <a class="pill sm" href="app/">Ausprobieren</a>
   </div></header>
+
   <main id="inhalt">
-    <section class="hero center" aria-labelledby="h1">
+    <!-- 1. Bühne: Name, Claim, das Produkt zum Antippen -->
+    <section class="hero center" id="ansehen" aria-labelledby="claim">
       <div class="wrap">
-        <p class="eyebrow">Geräteblick</p>
-        <h1 class="h-xl" id="h1">Nie wieder neben<br>dem Gerät warten.</h1>
-        <p class="lead">Sieh, welches Gerät frei ist. Stell dich digital an. Die App sagt dir, wann du dran bist.</p>
-        <div class="ctas"><a class="pill" href="app/">Demo öffnen</a><a class="more" href="#funktionen">So funktioniert's</a></div>
-      </div>
-      <div class="stage">
-        <div class="stage-img"><img src="fotos/02-studio-stadtblick-fenster.jpg" srcset="fotos/02-studio-stadtblick-fenster-800.jpg 800w, fotos/02-studio-stadtblick-fenster.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Helle Trainingsfläche mit Geräten vor großen Fenstern" class=herobild loading="eager" decoding="async"></div>
-        <div class="phone"><iframe src="app/?embed=1" title="Geräteblick-Demo (Vorschau)" loading="lazy"></iframe></div>
-      </div>
-      <div class="after-stage"></div>
-    </section>
-
-    <section class="sec" id="funktionen" aria-labelledby="f-h">
-      <div class="wrap">
-        <h2 class="h-l" id="f-h">Drei Schritte. Kein Warten.</h2>
-        <div class="feat"><figure class="card" style="margin:0"><img src="fotos/06-maschinenreihe-hell.jpg" srcset="fotos/06-maschinenreihe-hell-800.jpg 800w, fotos/06-maschinenreihe-hell.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Sehen, was frei ist." loading="lazy" decoding="async"><p>Sehen, was frei ist. <span>Jedes Gerät auf einen Blick, mit Karte.</span></p></figure><figure class="card" style="margin:0"><img src="fotos/03-studio-weiss-cardio.jpg" srcset="fotos/03-studio-weiss-cardio-800.jpg 800w, fotos/03-studio-weiss-cardio.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Digital anstellen." loading="lazy" decoding="async"><p>Digital anstellen. <span>Kein Herumstehen. Du siehst deine Wartezeit.</span></p></figure><figure class="card" style="margin:0"><img src="fotos/16-haende-griff-kabelzug.jpg" srcset="fotos/16-haende-griff-kabelzug-800.jpg 800w, fotos/16-haende-griff-kabelzug.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Gerufen werden." loading="lazy" decoding="async"><p>Gerufen werden. <span>Wenn du dran bist, meldet sich die App.</span></p></figure></div>
+        <h1 class="pname-big">Geräteblick</h1>
+        <p class="claim" id="claim">Anstellen.<br>Ohne Anstehen.</p>
+        <div class="ctas"><a class="pill" href="app/">Ausprobieren</a><a class="more" href="#zahlen">Mehr erfahren</a></div>
+        <div class="device"><iframe id="screen" src="app/?embed=1" title="Geräteblick zum Ausprobieren: die echte App in der Vorschau"></iframe></div>
+        <p class="tryhint">Das ist die echte App. Tipp einfach drauf.</p>
+        <div class="views" role="group" aria-label="Ansicht im Handy wählen">
+          <button type="button" aria-pressed="true" data-view="">Jetzt</button>
+          <button type="button" aria-pressed="false" data-view="ansicht=geraete">Geräte</button>
+          <button type="button" aria-pressed="false" data-view="ansicht=karte">Karte</button>
+          <button type="button" aria-pressed="false" data-view="geraet=latzug-links">Am Gerät</button>
+        </div>
+        <p class="caption" id="caption" aria-live="polite"><b>Jetzt.</b> Dein Plan und was als Nächstes frei wird.</p>
       </div>
     </section>
 
-    <section class="sec band" id="ueberall" aria-labelledby="u-h">
-      <div class="wrap center">
-        <h2 class="h-l" id="u-h">Überall dabei.</h2>
-        <div class="ways">
-          <div><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="4" width="20" height="40" rx="4"/><path d="M21 38h6"/></svg><h3 class="h-m">Am Handy</h3><p>Im Studio, beim Training.</p></div>
-          <div><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="8" width="38" height="26" rx="3"/><path d="M17 42h14M24 34v8"/></svg><h3 class="h-m">Am Rechner</h3><p>Geräte und Karte nebeneinander. <a href="app/?ansicht=geraete">Ansehen</a></p></div>
-          <div><div id="qr" class="qrbox"></div><h3 class="h-m">Per QR-Code</h3><p>Am Gerät scannen und loslegen.</p></div>
+    <!-- 2. Drei Zahlen statt Text -->
+    <section class="sec center" id="zahlen" aria-labelledby="z-h">
+      <div class="wrap">
+        <h2 class="h2" id="z-h">Auf einen Blick.</h2>
+        <div class="stats">
+          <div class="stat"><span class="n">1</span><span class="t">Tipp zum Anstellen.</span><span class="s">Ist alles belegt, wartest du digital und siehst deine Wartezeit.</span></div>
+          <div class="stat"><span class="n">3</span><span class="t">Wege hinein.</span><span class="s">Am Handy, am Rechner oder per QR-Code direkt am Gerät.</span></div>
+          <div class="stat"><span class="n">0</span><span class="t">Konten nötig.</span><span class="s">Läuft im Browser. Die Demo zeigt 16 simulierte Geräte.</span></div>
         </div>
       </div>
     </section>
 
-    <section class="cta center" aria-labelledby="c-h">
+    <!-- 3. Eine Handlung -->
+    <section class="end center" aria-labelledby="e-h">
       <div class="wrap">
-        <h2 class="h-l" id="c-h">Probier es aus.</h2>
-        <p class="lead" style="margin:14px auto 28px">Läuft im Browser, ohne Konto.</p>
-        <div class="ctas"><a class="pill" href="app/">Demo öffnen</a></div>
+        <h2 class="h2" id="e-h">Probier es aus.</h2>
+        <p class="lead">Am besten am Handy.</p>
+        <div class="ctas"><a class="pill" href="app/">Ausprobieren</a></div>
+        <div class="qr"><span id="qr"></span><span>Mit der Handykamera<br>scannen und loslegen.</span></div>
       </div>
     </section>
   </main>
+
   <footer class="foot"><div class="wrap">
-    <p><b>Geräteblick ist ein studentischer Prototyp</b> zur Seminararbeit im Modul Web Technologie (FOM). Kein echtes Produkt. Die Demo zeigt ein Beispielstudio mit simulierten Gästen.</p>
+    <p><b>Geräteblick ist ein studentischer Prototyp</b> zur Seminararbeit im Modul Web Technologie (FOM), kein echtes Produkt. Die Demo zeigt ein Beispielstudio mit simulierten Gästen.</p>
     <p><a href="SOURCES.md">Datenherkunft und Quellen</a> · <a href="README.md">Über den Prototyp</a> · <a href="app/?ansicht=qr">QR-Codes der Geräte</a> · <a href="app/?fehler=1">Fehlerfall der App</a></p>
-    <div class="credits"><p><b>Bildnachweise.</b> Frei lizenzierte Fotos (Unsplash-Lizenz bzw. Pexels-Lizenz), ausgewählt am 16.11.2026, verkleinert und hier gespeichert.</p><ul><li>Foto von Aalo Lens auf <a href="https://unsplash.com/de/fotos/moderner-fitnessraum-mit-trainingsgeraten-und-stadtblick-fuyulf8cNmg">Unsplash</a> (Unsplash-Lizenz)</li><li>Foto von hi room auf <a href="https://www.pexels.com/photo/empty-interior-of-gym-17227607/">Pexels</a> (Pexels-Lizenz)</li><li>Foto von eran design auf <a href="https://unsplash.com/de/fotos/modernes-fitnessstudio-mit-laufbandern-und-heimtrainern-X0rfCRWl690">Unsplash</a> (Unsplash-Lizenz)</li><li>Foto von Mina Rad auf <a href="https://unsplash.com/de/fotos/mannerhande-die-den-griff-einer-kabelmaschine-umklammern-WY_Ro2csC3o">Unsplash</a> (Unsplash-Lizenz)</li></ul></div>
   </div></footer>
+
   <script src="app/js/vendor/qrcode.js"></script>
   <script>
+    // Ansicht im Handy umschalten (wie der Produkt-Viewer auf Apple-Seiten)
+    (function () {
+      var texts = {
+        "": "<b>Jetzt.</b> Dein Plan und was als Nächstes frei wird.",
+        "ansicht=geraete": "<b>Geräte.</b> Alles, was frei ist, nach Muskelgruppe.",
+        "ansicht=karte": "<b>Karte.</b> Wo steht was, und was ist gerade belegt.",
+        "geraet=latzug-links": "<b>Am Gerät.</b> So öffnet der QR-Code ein Gerät: anstellen mit einem Tipp."
+      };
+      var screen = document.getElementById("screen"), cap = document.getElementById("caption");
+      Array.prototype.forEach.call(document.querySelectorAll("[data-view]"), function (b, i, all) {
+        b.addEventListener("click", function () {
+          var v = b.getAttribute("data-view");
+          screen.src = "app/?embed=1" + (v ? "&" + v : "");
+          cap.innerHTML = texts[v];
+          Array.prototype.forEach.call(all, function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+        });
+      });
+    })();
     // QR-Code zur App (Adresse aus data/devices.json, damit sie nur an einer Stelle steht)
     fetch("data/devices.json").then(function (r) { return r.json(); }).then(function (d) {
       if (typeof qrcode !== "function") return;
       var q = qrcode(0, "M"); q.addData(d.meta.publicBaseUrl); q.make();
-      document.getElementById("qr").innerHTML = '<img alt="QR-Code zur Geräteblick-Demo" width="120" height="120" src="' + q.createDataURL(4, 2) + '">';
+      document.getElementById("qr").innerHTML = '<img alt="QR-Code zur Geräteblick-Demo" width="104" height="104" src="' + q.createDataURL(4, 2) + '">';
     }).catch(function () { document.getElementById("qr").innerHTML = '<a href="app/">app/ öffnen</a>'; });
   </script>
 </body>

@@ -2,7 +2,7 @@
 
 | Datei | Aufgabe | Ausbau zur echten App |
 |---|---|---|
-| `index.html`, `web.css` | Produktseite der App (ohne Studio), Link und QR-Code zur Demo | bleibt |
+| `index.html`, `web.css` | Produktseite der App (dunkel, eingebettete App zum Antippen), Link und QR-Code zur Demo | bleibt |
 | `app/index.html`, `app/styles.css` | Oberfläche der App (Handy: Tab-Leiste, Rechner: Seitenleiste) | bleibt |
 | `app/js/app.js` | Ansichten, Navigation über die Adresse (`?geraet=…`, `?ansicht=qr`), Regeln | bleibt; spricht nur mit der Store-Schnittstelle |
 | `app/js/identity.js` | anonyme Gast-ID pro Tab (sessionStorage) | ID vom Server oder Studiokonto |

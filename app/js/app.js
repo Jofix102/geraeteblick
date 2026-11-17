@@ -1,10 +1,10 @@
-import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.10.0";
-import { createLocalStore } from "./store-local.js?v=0.10.0";
-import { pikto, hasPikto } from "./pikto.js?v=0.10.0";
+import { getIdentity, touch, isIdle, renewIdentity } from "./identity.js?v=0.11.0";
+import { createLocalStore } from "./store-local.js?v=0.11.0";
+import { pikto, hasPikto } from "./pikto.js?v=0.11.0";
 import {
   whereIs, isCompletelyFree, freeDeviceOfType, trainingFarEnough, isSim, phase, etaMs, msUntilFree,
   reservationMsLeft, trainingMs, joinWaitMs, presence, lastSetBefore
-} from "./queue-logic.js?v=0.10.0";
+} from "./queue-logic.js?v=0.11.0";
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.has("fehler") ? "../data/nicht-vorhanden.json" : "../data/devices.json";
