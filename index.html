@@ -3,123 +3,79 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Studio BGM (fiktiv): Beispiel-Website eines Fitnessstudios mit der Geräteblick-App für freie Geräte und kurze Wartezeiten. Prototyp zur Seminararbeit Web Technologie.">
-  <meta name="theme-color" content="#ffffff">
-  <title>Studio BGM – Trainieren ohne Warten (fiktives Studio)</title>
+  <meta name="description" content="Geräteblick: digitale Warteschlange für Trainingsgeräte im Fitnessstudio. Prototyp zur Seminararbeit Web Technologie, Demo mit simulierten Daten.">
+  <meta name="theme-color" content="#fbfbfd">
+  <meta name="color-scheme" content="light">
+  <title>Geräteblick – Nie wieder neben dem Gerät warten</title>
   <script>
-    // Alte Links (QR-Codes, Seminararbeit) zeigten auf die Wurzel: ?geraet=, ?ansicht=, ?fehler= gehören seit v0.8 zur App unter app/
+    // Alte Links (QR-Codes, Seminararbeit) zeigten auf die Wurzel: ?geraet=, ?ansicht=, ?fehler= gehören zur App unter app/
     (function () { var q = location.search; if (/[?&](geraet|ansicht|fehler|gruppe)=/.test(q)) location.replace("app/" + q + location.hash); })();
   </script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="site.css?v=0.9.1">
-  <script type="module" src="site.js?v=0.9.1"></script>
+  <link rel="stylesheet" href="web.css?v=0.10.0">
 </head>
 <body>
   <a class="skip" href="#inhalt">Zum Inhalt springen</a>
-  <p class="fiction">Fiktives Studio · Prototyp zur Seminararbeit „Web Technologie“ (FOM). Alle Angaben sind ausgedacht.</p>
-  <header class="nav" id="top">
-    <div class="wrap nav-in">
-      <a class="logo" href="#top" aria-label="Studio BGM, nach oben"><span class="logo-mark" aria-hidden="true"></span>Studio BGM</a>
-      <nav aria-label="Seitennavigation">
-        <ul class="nav-links">
-          <li><a href="#auslastung">Auslastung</a></li>
-          <li><a href="#training">Training</a></li>
-          <li><a href="#app">App</a></li>
-          <li><a href="#mitgliedschaft">Mitgliedschaft</a></li>
-          <li><a href="#kontakt">Kontakt</a></li>
-        </ul>
-      </nav>
-      <a class="btn small" href="app/">App öffnen</a>
-    </div>
-  </header>
-
+  <p class="fiction">Prototyp zur Seminararbeit „Web Technologie“ (FOM) · Die Demo nutzt simulierte Daten.</p>
+  <header class="gnav"><div class="wrap">
+    <a class="brand" href="#top" id="top"><i aria-hidden="true"></i>Geräteblick</a>
+    <nav aria-label="Seitennavigation"><ul><li><a href="#funktionen">Funktionen</a></li><li><a href="#ueberall">Überall</a></li></ul></nav>
+    <a class="pill sm" href="app/">Demo öffnen</a>
+  </div></header>
   <main id="inhalt">
-    <section class="hero">
-      <div class="wrap hero-in">
-        <div class="hero-tx">
-          <p class="eyebrow">Neu bei Studio BGM</p>
-          <h1>Trainieren.<br>Ohne Warten.</h1>
-          <p class="lead">Mit der App <b>Geräteblick</b> siehst du, welches Gerät frei ist, stellst dich digital an und wirst gerufen, wenn du dran bist. Am Handy, am Rechner oder per QR-Code direkt am Gerät.</p>
-          <div class="cta">
-            <a class="btn" href="app/">Geräteblick öffnen</a>
-            <a class="btn ghost" href="#auslastung">Live-Auslastung ansehen</a>
-          </div>
-          <p class="note">Die App ist ein Prototyp mit simulierten Gästen. Du brauchst kein Konto.</p>
-        </div>
-        <div class="phone" aria-hidden="true">
-          <iframe src="app/?embed=1" title="Vorschau der Geräteblick-App" loading="lazy" tabindex="-1"></iframe>
-        </div>
-      </div>
-    </section>
-
-    <section id="auslastung" class="band">
+    <section class="hero center" aria-labelledby="h1">
       <div class="wrap">
-        <p class="eyebrow">Live im Studio</p>
-        <h2>Wie voll ist es gerade?</h2>
-        <div id="live" class="live" aria-live="polite">
-          <p class="muted">Auslastung wird geladen …</p>
-        </div>
-        <p class="muted small">Die Werte kommen aus derselben Datenquelle wie die App (<code>data/devices.json</code>) und aus der Simulation in deinem Browser. Sie sind nicht echt.</p>
+        <p class="eyebrow">Geräteblick</p>
+        <h1 class="h-xl" id="h1">Nie wieder neben<br>dem Gerät warten.</h1>
+        <p class="lead">Sieh, welches Gerät frei ist. Stell dich digital an. Die App sagt dir, wann du dran bist.</p>
+        <div class="ctas"><a class="pill" href="app/">Demo öffnen</a><a class="more" href="#funktionen">So funktioniert's</a></div>
+      </div>
+      <div class="stage">
+        <div class="stage-img"><img src="fotos/02-studio-stadtblick-fenster.jpg" srcset="fotos/02-studio-stadtblick-fenster-800.jpg 800w, fotos/02-studio-stadtblick-fenster.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Helle Trainingsfläche mit Geräten vor großen Fenstern" class=herobild loading="eager" decoding="async"></div>
+        <div class="phone"><iframe src="app/?embed=1" title="Geräteblick-Demo (Vorschau)" loading="lazy"></iframe></div>
+      </div>
+      <div class="after-stage"></div>
+    </section>
+
+    <section class="sec" id="funktionen" aria-labelledby="f-h">
+      <div class="wrap">
+        <h2 class="h-l" id="f-h">Drei Schritte. Kein Warten.</h2>
+        <div class="feat"><figure class="card" style="margin:0"><img src="fotos/06-maschinenreihe-hell.jpg" srcset="fotos/06-maschinenreihe-hell-800.jpg 800w, fotos/06-maschinenreihe-hell.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Sehen, was frei ist." loading="lazy" decoding="async"><p>Sehen, was frei ist. <span>Jedes Gerät auf einen Blick, mit Karte.</span></p></figure><figure class="card" style="margin:0"><img src="fotos/03-studio-weiss-cardio.jpg" srcset="fotos/03-studio-weiss-cardio-800.jpg 800w, fotos/03-studio-weiss-cardio.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Digital anstellen." loading="lazy" decoding="async"><p>Digital anstellen. <span>Kein Herumstehen. Du siehst deine Wartezeit.</span></p></figure><figure class="card" style="margin:0"><img src="fotos/16-haende-griff-kabelzug.jpg" srcset="fotos/16-haende-griff-kabelzug-800.jpg 800w, fotos/16-haende-griff-kabelzug.jpg 1600w" sizes="(max-width:860px) 90vw, 1100px" alt="Gerufen werden." loading="lazy" decoding="async"><p>Gerufen werden. <span>Wenn du dran bist, meldet sich die App.</span></p></figure></div>
       </div>
     </section>
 
-    <section id="training">
-      <div class="wrap">
-        <p class="eyebrow">Trainingsfläche</p>
-        <h2>Fünf Bereiche. Sechzehn Geräte.</h2>
-        <p class="lead narrow">Von Rücken bis Ganzkörper: Jede Station hat einen QR-Code. Scannen öffnet direkt das Gerät in der App.</p>
-        <div id="areas" class="areas"></div>
-      </div>
-    </section>
-
-    <section id="app" class="band">
-      <div class="wrap">
-        <p class="eyebrow">Die App</p>
-        <h2>So funktioniert Geräteblick.</h2>
-        <ol class="steps">
-          <li><span class="num">1</span><h3>Gerät wählen</h3><p>Plan wählen oder ein Gerät antippen. Am Gerät reicht der QR-Code.</p></li>
-          <li><span class="num">2</span><h3>Anstellen oder hingehen</h3><p>Ist alles belegt, stellst du dich an und siehst deine Wartezeit. Wirst du gerufen, zeigt eine Karte den Weg.</p></li>
-          <li><span class="num">3</span><h3>Sätze abhaken</h3><p>Du hakst jeden Satz ab. So sehen Wartende, wann das Gerät frei wird. Beim letzten Satz wird der Nächste vorgewarnt.</p></li>
-        </ol>
-        <div class="appcards">
-          <a class="appcard" href="app/"><h3>Am Handy</h3><p>Jetzt, Geräte und Karte als Tabs. Training als großer Vollbildschirm.</p><span class="more">Öffnen ›</span></a>
-          <a class="appcard" href="app/?ansicht=geraete"><h3>Am Rechner</h3><p>Seitenleiste, Geräteliste und Studiokarte nebeneinander.</p><span class="more">Öffnen ›</span></a>
-          <div class="appcard qr"><div id="qr" class="qrbox"></div><div><h3>Per QR-Code</h3><p>Mit der Handykamera scannen und direkt starten.</p></div></div>
+    <section class="sec band" id="ueberall" aria-labelledby="u-h">
+      <div class="wrap center">
+        <h2 class="h-l" id="u-h">Überall dabei.</h2>
+        <div class="ways">
+          <div><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="4" width="20" height="40" rx="4"/><path d="M21 38h6"/></svg><h3 class="h-m">Am Handy</h3><p>Im Studio, beim Training.</p></div>
+          <div><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="8" width="38" height="26" rx="3"/><path d="M17 42h14M24 34v8"/></svg><h3 class="h-m">Am Rechner</h3><p>Geräte und Karte nebeneinander. <a href="app/?ansicht=geraete">Ansehen</a></p></div>
+          <div><div id="qr" class="qrbox"></div><h3 class="h-m">Per QR-Code</h3><p>Am Gerät scannen und loslegen.</p></div>
         </div>
       </div>
     </section>
 
-    <section id="mitgliedschaft">
+    <section class="cta center" aria-labelledby="c-h">
       <div class="wrap">
-        <p class="eyebrow">Mitgliedschaft</p>
-        <h2>Einfach. Ohne Kleingedrucktes.</h2>
-        <div class="prices">
-          <div class="price"><h3>Basis</h3><p class="amount">24,90 €<span>/Monat</span></p><ul><li>Trainingsfläche</li><li>Geräteblick-App</li><li>12 Monate Laufzeit</li></ul></div>
-          <div class="price hi"><p class="tag">Beliebt</p><h3>Plus</h3><p class="amount">34,90 €<span>/Monat</span></p><ul><li>Alles aus Basis</li><li>Kurse und Sauna</li><li>Monatlich kündbar</li></ul></div>
-          <div class="price"><h3>Tageskarte</h3><p class="amount">12 €<span>/Tag</span></p><ul><li>Trainingsfläche</li><li>Geräteblick als Gast</li><li>Ohne Vertrag</li></ul></div>
-        </div>
-        <p class="muted small">Preise und Leistungen sind Beispielwerte für den Prototyp.</p>
-      </div>
-    </section>
-
-    <section id="kontakt" class="band">
-      <div class="wrap contact">
-        <div><p class="eyebrow">Kontakt</p><h2>Komm vorbei.</h2>
-          <p>Studio BGM<br>Beispielweg 1<br>12345 Musterstadt</p>
-          <p><a href="mailto:kontakt@studio-bgm.example">kontakt@studio-bgm.example</a></p></div>
-        <div><h3>Öffnungszeiten</h3>
-          <dl class="hours"><dt>Montag bis Freitag</dt><dd>6 bis 23 Uhr</dd><dt>Samstag und Sonntag</dt><dd>8 bis 20 Uhr</dd><dt>Feiertage</dt><dd>9 bis 18 Uhr</dd></dl></div>
+        <h2 class="h-l" id="c-h">Probier es aus.</h2>
+        <p class="lead" style="margin:14px auto 28px">Läuft im Browser, ohne Konto.</p>
+        <div class="ctas"><a class="pill" href="app/">Demo öffnen</a></div>
       </div>
     </section>
   </main>
-
-  <footer class="foot">
-    <div class="wrap">
-      <p><b>Studio BGM ist kein echtes Unternehmen.</b> Website und App sind ein studentischer Prototyp zur Seminararbeit im Modul Web Technologie (FOM). Adresse, Preise und E-Mail sind ausgedacht (<code>.example</code> ist eine reservierte Domain).</p>
-      <p><a href="SOURCES.md">Datenherkunft und Quellen</a> · <a href="README.md">Über den Prototyp</a> · <a href="app/?ansicht=qr">QR-Codes der Geräte</a> · <a href="app/?fehler=1">Fehlerfall der App</a></p>
-    </div>
-  </footer>
-  <noscript><p class="noscript">Für die Live-Auslastung und die App wird JavaScript benötigt.</p></noscript>
+  <footer class="foot"><div class="wrap">
+    <p><b>Geräteblick ist ein studentischer Prototyp</b> zur Seminararbeit im Modul Web Technologie (FOM). Kein echtes Produkt. Die Demo zeigt ein Beispielstudio mit simulierten Gästen.</p>
+    <p><a href="SOURCES.md">Datenherkunft und Quellen</a> · <a href="README.md">Über den Prototyp</a> · <a href="app/?ansicht=qr">QR-Codes der Geräte</a> · <a href="app/?fehler=1">Fehlerfall der App</a></p>
+    <div class="credits"><p><b>Bildnachweise.</b> Frei lizenzierte Fotos (Unsplash-Lizenz bzw. Pexels-Lizenz), ausgewählt am 16.11.2026, verkleinert und hier gespeichert.</p><ul><li>Foto von Aalo Lens auf <a href="https://unsplash.com/de/fotos/moderner-fitnessraum-mit-trainingsgeraten-und-stadtblick-fuyulf8cNmg">Unsplash</a> (Unsplash-Lizenz)</li><li>Foto von hi room auf <a href="https://www.pexels.com/photo/empty-interior-of-gym-17227607/">Pexels</a> (Pexels-Lizenz)</li><li>Foto von eran design auf <a href="https://unsplash.com/de/fotos/modernes-fitnessstudio-mit-laufbandern-und-heimtrainern-X0rfCRWl690">Unsplash</a> (Unsplash-Lizenz)</li><li>Foto von Mina Rad auf <a href="https://unsplash.com/de/fotos/mannerhande-die-den-griff-einer-kabelmaschine-umklammern-WY_Ro2csC3o">Unsplash</a> (Unsplash-Lizenz)</li></ul></div>
+  </div></footer>
   <script src="app/js/vendor/qrcode.js"></script>
+  <script>
+    // QR-Code zur App (Adresse aus data/devices.json, damit sie nur an einer Stelle steht)
+    fetch("data/devices.json").then(function (r) { return r.json(); }).then(function (d) {
+      if (typeof qrcode !== "function") return;
+      var q = qrcode(0, "M"); q.addData(d.meta.publicBaseUrl); q.make();
+      document.getElementById("qr").innerHTML = '<img alt="QR-Code zur Geräteblick-Demo" width="120" height="120" src="' + q.createDataURL(4, 2) + '">';
+    }).catch(function () { document.getElementById("qr").innerHTML = '<a href="app/">app/ öffnen</a>'; });
+  </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ Prototyp einer digitalen Warteschlange für Trainingsgeräte im Fitnessstudio. E
 
 | Aufruf | Wirkung |
 |---|---|
-| `/` | Website des fiktiven „Studio BGM“ mit Live-Auslastung und Link zur App |
+| `/` | Produktseite der App Geräteblick (ohne bestimmtes Studio) mit Link zur Demo |
 | `/app/` | App Geräteblick (Tabs Jetzt, Geräte, Karte; am Rechner ab 1000 px Seitenleiste und zwei Spalten) |
 | `/app/?geraet=latzug-links` | öffnet direkt ein Gerät (QR-Einstieg) |
 | `/app/?ansicht=qr` | QR-Codes zum Ausdrucken |

@@ -1,12 +1,12 @@
 {
   "meta": {
-    "version": "0.9.1",
-    "studioName": "Studio BGM",
+    "version": "0.10.0",
+    "studioName": "Beispielstudio",
     "areaName": "Trainingsfläche",
     "publicBaseUrl": "https://jofix102.github.io/geraeteblick/app/",
     "sourceNote": "Alle Angaben sind eigens erstellte, fiktive Beispieldaten (Geräteauswahl nach Vorgabe des Verfassers, 06.11.2026). Sie stammen nicht aus einem realen Studio und werden nicht live synchronisiert.",
     "plansNote": "Feste Beispielpläne (Vorgabe des Verfassers, 06.11.2026), nur aus den simulierten Geräten zusammengestellt. Keine Trainingsempfehlung.",
-    "fictionNote": "Fiktives Studio für eine Seminararbeit (FOM, Web Technologie). Kein echtes Unternehmen."
+    "fictionNote": "Beispielstudio mit simulierten Daten für eine Seminararbeit (FOM, Web Technologie). Kein echtes Unternehmen."
   },
   "rules": {
     "setMinutes": 1,
